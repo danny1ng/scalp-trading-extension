@@ -23,13 +23,15 @@ This version places orders through the exchange UI flow:
 - switches to **Limit** order type
 - selects **Buy/Long** or **Sell/Short** side
 - fills price and amount inputs
-- clicks `data-testid="place-order-button"`
+- optionally clicks `data-testid="place-order-button"`
 
-Order placement is real. Use with caution on live accounts.
+By default, **Safe mode is ON**, so the extension prepares the order flow but does not click final submit.
+Disable Safe mode in popup to allow real order submission.
 
 ## Safety notice
 - This project is not financial advice.
-- The extension can submit real orders through exchange UI controls.
+- Safe mode is enabled by default.
+- If you disable Safe mode, the extension can submit real orders through exchange UI controls.
 - Always test on demo/sandbox environments first.
 - See [DISCLAIMER.md](./DISCLAIMER.md) for details.
 
@@ -76,8 +78,9 @@ pnpm build
 3. Slot values auto-save when an input loses focus.
 4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
 5. Hold `Alt` and left-click in the chart area.
-6. The extension automatically prepares and submits a limit order via UI.
-7. Optional: open DevTools Console and check extension logs (`[scalp-alt-click] ...`) for debugging.
+6. With Safe mode ON (default), the extension prepares a limit order flow without final submit click.
+7. Turn Safe mode OFF in popup if you want real submit click.
+8. Optional: open DevTools Console and check extension logs (`[scalp-alt-click] ...`) for debugging.
 
 On supported pages, a floating in-page label shows `Slot N: Volume`.
 You can enable/disable this label and choose its corner per supported domain.

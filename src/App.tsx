@@ -10,6 +10,7 @@ import {
   saveHudSettingsForDomain,
   type HudCorner
 } from './lib/hud-settings';
+import { getDefaultSafeMode, getSafeModeForDomain, saveSafeModeForDomain } from './lib/safe-mode-settings';
 import { getTickerSlotConfig, saveTickerSlotConfig, type SlotValue } from './lib/slots-storage';
 import { tickerFromTradeUrl } from './lib/ticker';
 
@@ -61,6 +62,7 @@ export default function App() {
   const [status, setStatus] = useState<'idle' | 'loaded' | 'saved'>('idle');
   const [hudEnabled, setHudEnabled] = useState(getDefaultHudSettings().enabled);
   const [hudCorner, setHudCorner] = useState<HudCorner>(getDefaultHudSettings().corner);
+  const [safeMode, setSafeMode] = useState(getDefaultSafeMode());
   const [tabContext, setTabContext] = useState<ActiveTabContext>({
     url: null,
     ticker: null,
@@ -91,7 +93,7 @@ export default function App() {
   }, [ticker]);
 
   useEffect(() => {
-    async function loadHudSettings() {
+    async function loadUiSettings() {
       if (!tabContext.supported) {
         return;
       }
@@ -104,9 +106,12 @@ export default function App() {
       const settings = await getHudSettingsForDomain(domain);
       setHudEnabled(settings.enabled);
       setHudCorner(settings.corner);
+
+      const nextSafeMode = await getSafeModeForDomain(domain);
+      setSafeMode(nextSafeMode);
     }
 
-    void loadHudSettings();
+    void loadUiSettings();
   }, [tabContext.supported, tabContext.url]);
 
   async function persistDraft(nextSlots: DraftSlots, nextActiveSlotIndex: number): Promise<void> {
@@ -151,6 +156,16 @@ export default function App() {
   async function onChangeHudCorner(corner: HudCorner): Promise<void> {
     setHudCorner(corner);
     await persistHudSettings({ enabled: hudEnabled, corner });
+  }
+
+  async function onToggleSafeMode(enabled: boolean): Promise<void> {
+    setSafeMode(enabled);
+    const domain = domainFromUrl(tabContext.url);
+    if (!domain) {
+      return;
+    }
+
+    await saveSafeModeForDomain(domain, enabled);
   }
 
   const activeVolumePreview = useMemo(() => {
@@ -212,6 +227,10 @@ export default function App() {
           <Card className="footer-card">
             <div className="hud-settings">
               <label className="hud-toggle">
+                <input type="checkbox" checked={safeMode} onChange={(event) => void onToggleSafeMode(event.target.checked)} />
+                <span>Safe mode (no order click)</span>
+              </label>
+              <label className="hud-toggle">
                 <input type="checkbox" checked={hudEnabled} onChange={(event) => void onToggleHud(event.target.checked)} />
                 <span>Show chart label</span>
               </label>
@@ -225,7 +244,9 @@ export default function App() {
                 </select>
               </label>
             </div>
-            <p className="hint">Hold Alt + Left Click on chart to generate order draft.</p>
+            <p className="hint">
+              Hold Alt + Left Click on chart to {safeMode ? 'prepare order flow' : 'prepare and submit order'}.
+            </p>
             <p className="hint">Use Alt + 1..5 to switch active slot.</p>
             <p className="status">Status: {status}</p>
           </Card>

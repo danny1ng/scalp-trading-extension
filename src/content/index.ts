@@ -6,7 +6,7 @@ import {
   LOG_PREFIX,
   MESSAGE_SOURCE,
   MESSAGE_TYPE_DRAFT,
-  MESSAGE_TYPE_UI_DRY_RUN,
+  MESSAGE_TYPE_UI_EXECUTE,
   type DraftOrderPayload,
   type OrderSide
 } from './types';
@@ -89,9 +89,9 @@ function bindTopWindowMessageBridge(): void {
       return;
     }
 
-    if (data.type === MESSAGE_TYPE_UI_DRY_RUN && data.payload) {
-      void executeUiOrderFlow(data.payload).catch((error: unknown) => {
-        setExecutionStatus('failed', 'dry-run-handler-failed');
+    if (data.type === MESSAGE_TYPE_UI_EXECUTE && data.payload) {
+      void executeUiOrderFlow(data.payload, { safeMode: hudSlotsController.getSafeMode() }).catch((error: unknown) => {
+        setExecutionStatus('failed', 'execute-handler-failed');
         console.error(`${LOG_PREFIX} ui-order-submit handler failed`, error);
       });
     }
@@ -147,7 +147,7 @@ async function handleAltLeftClick(event: MouseEvent): Promise<void> {
     window.top?.postMessage(
       {
         source: MESSAGE_SOURCE,
-        type: MESSAGE_TYPE_UI_DRY_RUN,
+        type: MESSAGE_TYPE_UI_EXECUTE,
         payload: draftPayload
       },
       '*'
@@ -155,7 +155,7 @@ async function handleAltLeftClick(event: MouseEvent): Promise<void> {
     return;
   }
 
-  void executeUiOrderFlow(draftPayload);
+  void executeUiOrderFlow(draftPayload, { safeMode: hudSlotsController.getSafeMode() });
 }
 
 function bindOnCanvas(): void {
@@ -199,6 +199,7 @@ function bindOnCanvas(): void {
 bindTopWindowMessageBridge();
 void hudSlotsController.loadSlotConfigFromStorage();
 void hudSlotsController.loadHudSettingsFromStorage();
+void hudSlotsController.loadSafeModeFromStorage();
 bindOnCanvas();
 hudSlotsController.bindSlotHotkeys();
 hudSlotsController.bindStorageSync();

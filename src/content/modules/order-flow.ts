@@ -147,6 +147,10 @@ export function setExecutionStatus(status: 'success' | 'failed', reason: string)
   document.documentElement.setAttribute('data-lac-last-exec-ts', new Date().toISOString());
 }
 
+type ExecuteUiOrderOptions = {
+  safeMode: boolean;
+};
+
 function nowMs(): number {
   return Date.now();
 }
@@ -205,7 +209,7 @@ function formatPriceForInput(price: number, sample: string): string {
   return price.toFixed(Math.min(8, decimals));
 }
 
-export async function executeUiOrderFlow(payload: DraftOrderPayload): Promise<void> {
+export async function executeUiOrderFlow(payload: DraftOrderPayload, options: ExecuteUiOrderOptions): Promise<void> {
   if (!withExecutionLock()) {
     setExecutionStatus('failed', 'execution-locked');
     console.warn(`${LOG_PREFIX} ui-order-submit skipped`, { reason: 'execution-locked' });
@@ -324,6 +328,20 @@ export async function executeUiOrderFlow(payload: DraftOrderPayload): Promise<vo
   if (isButtonDisabled(placeOrderButton)) {
     setExecutionStatus('failed', 'place-order-button-disabled');
     console.warn(`${LOG_PREFIX} ui-order-submit failed`, { reason: 'place-order-button-disabled' });
+    return;
+  }
+
+  if (options.safeMode) {
+    setExecutionStatus('success', 'safe-mode-ready');
+    console.log(`${LOG_PREFIX} ui-order-submit safe-mode-ready`, {
+      side: payload.side as UiOrderSide,
+      price: payload.clickedPrice,
+      amount: payload.slotVolume,
+      wouldClickButton: (placeOrderButton.textContent ?? '').trim(),
+      sideTab: (sideButton.textContent ?? '').trim(),
+      submitBefore,
+      submitAfter
+    });
     return;
   }
 

@@ -1,9 +1,11 @@
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
 import type { HudCorner, HudSettings, SlotValue, TickerSlotConfig } from '../types';
 import { LOG_PREFIX } from '../types';
+import { getDefaultSafeMode, getSafeModeStorageKey } from '../../lib/safe-mode-settings';
 
 const STORAGE_KEY = 'lighterVolumeByTicker';
 const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
+const SAFE_MODE_KEY = getSafeModeStorageKey();
 
 function normalizeSlots(input: unknown[]): SlotValue[] {
   const normalized: SlotValue[] = [null, null, null, null, null];
@@ -102,6 +104,25 @@ async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
   return normalizeHudSettings(typedStore[domain.toLowerCase()]);
 }
 
+function normalizeSafeMode(raw: unknown): boolean {
+  return typeof raw === 'boolean' ? raw : getDefaultSafeMode();
+}
+
+async function readSafeModeByDomain(domain: string): Promise<boolean> {
+  if (!chrome.storage?.local) {
+    return getDefaultSafeMode();
+  }
+
+  const result = await chrome.storage.local.get(SAFE_MODE_KEY);
+  const store = result[SAFE_MODE_KEY];
+  if (!store || typeof store !== 'object') {
+    return getDefaultSafeMode();
+  }
+
+  const typedStore = store as Record<string, unknown>;
+  return normalizeSafeMode(typedStore[domain.toLowerCase()]);
+}
+
 export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) {
   let activeTicker: string | null = null;
   let activeSlotConfig: TickerSlotConfig = {
@@ -112,6 +133,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     enabled: true,
     corner: 'bottom-right'
   };
+  let activeSafeMode = getDefaultSafeMode();
   let hudElement: HTMLDivElement | null = null;
 
   function getSelectedSlotVolume(): number | null {
@@ -218,6 +240,10 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     renderHud();
   }
 
+  async function loadSafeModeFromStorage(): Promise<void> {
+    activeSafeMode = await readSafeModeByDomain(window.location.hostname);
+  }
+
   async function setActiveSlotIndex(nextIndex: number): Promise<void> {
     const bounded = Math.max(0, Math.min(4, Math.trunc(nextIndex)));
     activeSlotConfig = {
@@ -293,6 +319,15 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
           renderHud();
         }
       }
+
+      if (changes[SAFE_MODE_KEY]) {
+        const nextStore = changes[SAFE_MODE_KEY].newValue;
+        if (nextStore && typeof nextStore === 'object') {
+          activeSafeMode = normalizeSafeMode((nextStore as Record<string, unknown>)[window.location.hostname.toLowerCase()]);
+        } else {
+          activeSafeMode = getDefaultSafeMode();
+        }
+      }
     });
   }
 
@@ -307,13 +342,19 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     return activeSlotConfig.activeSlotIndex;
   }
 
+  function getSafeMode(): boolean {
+    return activeSafeMode;
+  }
+
   return {
     loadSlotConfigFromStorage,
     loadHudSettingsFromStorage,
+    loadSafeModeFromStorage,
     bindSlotHotkeys,
     bindStorageSync,
     syncTickerFromLocation,
     getSelectedSlotVolume,
-    getActiveSlotIndex
+    getActiveSlotIndex,
+    getSafeMode
   };
 }
