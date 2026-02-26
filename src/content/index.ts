@@ -30,14 +30,35 @@ function tickerFromTradeUrl(url: string): string | null {
 }
 
 function parseMarkPriceFromPage(): number | null {
-  const text = document.body?.innerText ?? '';
-  const match = text.match(/Mark\s*Price\s*([0-9][0-9,]*(?:\.[0-9]+)?)/i);
-  if (!match) {
+  const parseFromText = (text: string): number | null => {
+    const match = text.match(/Mark\s*Price\s*([0-9][0-9,]*(?:\.[0-9]+)?)/i);
+    if (!match) {
+      return null;
+    }
+
+    const parsed = Number(match[1].replace(/,/g, ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const localText = document.body?.innerText ?? '';
+  const localPrice = parseFromText(localText);
+  if (localPrice !== null) {
+    return localPrice;
+  }
+
+  try {
+    if (window.top && window.top !== window) {
+      const topText = window.top.document?.body?.innerText ?? '';
+      const topPrice = parseFromText(topText);
+      if (topPrice !== null) {
+        return topPrice;
+      }
+    }
+  } catch {
     return null;
   }
 
-  const parsed = Number(match[1].replace(/,/g, ''));
-  return Number.isFinite(parsed) ? parsed : null;
+  return null;
 }
 
 function decideSide(clickedPrice: number, currentPrice: number | null): OrderSide {
