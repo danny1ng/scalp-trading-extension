@@ -27,6 +27,12 @@ This version places orders through the exchange UI flow:
 
 Order placement is real. Use with caution on live accounts.
 
+## Safety notice
+- This project is not financial advice.
+- The extension can submit real orders through exchange UI controls.
+- Always test on demo/sandbox environments first.
+- See [DISCLAIMER.md](/root/projects/my/scalp-trading-extention/DISCLAIMER.md) for details.
+
 ## Supported exchanges/pages
 - `https://app.lighter.xyz/trade/*`
 - `https://lighter.exchange/trade/*`
@@ -96,3 +102,9 @@ The log payload includes:
 - Data is stored locally in `chrome.storage.local` for slot presets.
 - No direct external trading API call is made by the extension itself in this MVP.
 - Orders are submitted by clicking existing exchange UI controls in your browser session.
+
+## Open-source docs
+- License: [LICENSE](/root/projects/my/scalp-trading-extention/LICENSE)
+- Contributing: [CONTRIBUTING.md](/root/projects/my/scalp-trading-extention/CONTRIBUTING.md)
+- Security: [SECURITY.md](/root/projects/my/scalp-trading-extention/SECURITY.md)
+- Code of Conduct: [CODE_OF_CONDUCT.md](/root/projects/my/scalp-trading-extention/CODE_OF_CONDUCT.md)
