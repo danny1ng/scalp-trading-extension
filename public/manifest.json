@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "description": "Click-to-order scalping helper with configurable per-ticker volume slots",
   "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
   "host_permissions": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"],
   "action": {
     "default_title": "One-Click Chart Scalper",

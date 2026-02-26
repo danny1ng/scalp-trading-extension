@@ -11,6 +11,11 @@ You hold `Alt` and left-click on the chart, and the extension calculates:
 
 Then it produces a structured order draft.
 
+The popup is optimized for quick scalping setup:
+- bold fintech visual style
+- compact 5-slot volume editor
+- active-site status indicator
+
 ## Important MVP status
 This version **does not place real orders yet**.  
 It only logs the order draft to DevTools Console so you can validate behavior before API execution is enabled.
@@ -18,6 +23,10 @@ It only logs the order draft to DevTools Console so you can validate behavior be
 ## Supported exchanges/pages
 - `https://app.lighter.xyz/trade/*`
 - `https://lighter.exchange/trade/*`
+
+## Icon behavior
+- Gray icon: current tab is not a supported `/trade/*` page.
+- Green icon: current tab is a supported `/trade/*` page.
 
 ## Why use it
 - Faster manual scalping workflow
@@ -63,6 +72,9 @@ The payload includes:
   - Make sure you are on a supported `/trade/*` URL.
   - Reload the extension in `chrome://extensions`.
   - Refresh the trade page.
+- Icon does not change color:
+  - Switch tabs once or refresh the current tab.
+  - Ensure the URL is exactly a supported `/trade/*` route.
 - Wrong or missing output:
   - Ensure chart is fully loaded before clicking.
   - Check console for warnings with `[lighter-alt-click]`.

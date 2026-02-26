@@ -11,7 +11,8 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'index.html'),
         content: resolve(__dirname, 'src/content/index.ts'),
-        'page-bridge': resolve(__dirname, 'src/content/page-bridge.ts')
+        'page-bridge': resolve(__dirname, 'src/content/page-bridge.ts'),
+        background: resolve(__dirname, 'src/background/index.ts')
       },
       output: {
         entryFileNames: 'assets/[name].js',

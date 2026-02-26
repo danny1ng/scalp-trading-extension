@@ -164,18 +164,19 @@ function resolveClickedPriceByUniversalInterpolation(event: MouseEvent, canvasRe
   return last.price - (fallbackY - last.y) * pricePerPixel;
 }
 
+function isSupportedLighterTradeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const isSupportedHost = parsed.hostname === 'app.lighter.xyz' || parsed.hostname === 'lighter.exchange';
+    return isSupportedHost && /^\/trade\/[^/]+/i.test(parsed.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export const lighterAdapter: ExchangeAdapter = {
   id: 'lighter',
-  matches: (url: string) => {
-    try {
-      const parsed = new URL(url);
-      const isSupportedHost = parsed.hostname === 'app.lighter.xyz' || parsed.hostname === 'lighter.exchange';
-      const isTradePath = /^\/trade\//i.test(parsed.pathname);
-      return isSupportedHost && isTradePath;
-    } catch {
-      return false;
-    }
-  },
+  matches: (url: string) => isSupportedLighterTradeUrl(url),
   getTicker: (url: string) => {
     try {
       const parsed = new URL(url);

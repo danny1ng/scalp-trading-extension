@@ -1,7 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Badge } from './components/ui/badge';
+import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
+import { Input } from './components/ui/input';
+import { isSupportedTradeUrl } from './core/supported-url';
 import { getTickerSlotConfig, saveTickerSlotConfig, type SlotValue } from './lib/slots-storage';
+import { tickerFromTradeUrl } from './lib/ticker';
 
 type DraftSlots = string[];
+
+type ActiveTabContext = {
+  url: string | null;
+  ticker: string | null;
+  supported: boolean;
+};
 
 function toDraftSlots(values: SlotValue[]): DraftSlots {
   return values.map((value) => (value === null ? '' : String(value)));
@@ -18,50 +30,45 @@ function parseDraftSlots(values: DraftSlots): SlotValue[] {
   });
 }
 
-function tickerFromPath(pathname: string): string | null {
-  const match = pathname.match(/^\/trade\/([^/]+)/i);
-  return match ? decodeURIComponent(match[1]).toUpperCase() : null;
-}
-
-async function getActiveTabTicker(): Promise<string | null> {
+async function getActiveTabContext(): Promise<ActiveTabContext> {
   if (typeof chrome === 'undefined' || !chrome.tabs?.query) {
-    return null;
+    return { url: null, ticker: null, supported: false };
   }
 
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  const currentUrl = tabs[0]?.url;
-
+  const currentUrl = tabs[0]?.url ?? null;
   if (!currentUrl) {
-    return null;
+    return { url: null, ticker: null, supported: false };
   }
 
-  try {
-    const parsed = new URL(currentUrl);
-    if (parsed.hostname !== 'app.lighter.xyz') {
-      return null;
-    }
-
-    return tickerFromPath(parsed.pathname);
-  } catch {
-    return null;
-  }
+  return {
+    url: currentUrl,
+    ticker: tickerFromTradeUrl(currentUrl),
+    supported: isSupportedTradeUrl(currentUrl)
+  };
 }
 
 export default function App() {
-  const [ticker, setTicker] = useState('ARC');
+  const [ticker, setTicker] = useState('BTC');
   const [slots, setSlots] = useState<DraftSlots>(['', '', '', '', '']);
   const [activeSlotIndex, setActiveSlotIndex] = useState(0);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loaded' | 'saved'>('idle');
+  const [tabContext, setTabContext] = useState<ActiveTabContext>({
+    url: null,
+    ticker: null,
+    supported: false
+  });
 
   useEffect(() => {
-    async function detectTicker() {
-      const activeTicker = await getActiveTabTicker();
-      if (activeTicker) {
-        setTicker(activeTicker);
+    async function detectActiveTabContext() {
+      const context = await getActiveTabContext();
+      setTabContext(context);
+      if (context.ticker) {
+        setTicker(context.ticker);
       }
     }
 
-    void detectTicker();
+    void detectActiveTabContext();
   }, []);
 
   useEffect(() => {
@@ -91,43 +98,60 @@ export default function App() {
     });
   }
 
+  const activeVolumePreview = useMemo(() => {
+    const value = slots[activeSlotIndex];
+    return value.trim() === '' ? 'Not set' : value;
+  }, [slots, activeSlotIndex]);
+
   return (
     <main className="popup">
-      <h1>Lighter Volumes</h1>
-      <label className="field">
-        <span>Ticker</span>
-        <input
-          value={ticker}
-          onChange={(event) => setTicker(event.target.value.toUpperCase())}
-          placeholder="ARC"
-        />
-      </label>
+      <Card className="header-card">
+        <div>
+          <h1>One-Click Chart Scalper</h1>
+          <p>Fast chart click workflow for scalping entries</p>
+        </div>
+        <Badge tone={tabContext.supported ? 'success' : 'muted'}>
+          {tabContext.supported ? 'Supported Site' : 'Unsupported Site'}
+        </Badge>
+      </Card>
 
-      <section className="slots">
-        {slots.map((value, index) => (
-          <label key={index} className="field row">
-            <input
-              type="radio"
-              name="activeSlot"
-              checked={activeSlotIndex === index}
-              onChange={() => setActiveSlotIndex(index)}
-              aria-label={`Active slot ${index + 1}`}
-            />
-            <span>Slot {index + 1}</span>
-            <input
-              value={value}
-              onChange={(event) => updateSlot(index, event.target.value)}
-              placeholder="Volume"
-            />
-          </label>
-        ))}
-      </section>
+      <Card className="context-card">
+        <label className="field">
+          <span>Ticker</span>
+          <Input value={ticker} onChange={(event) => setTicker(event.target.value.toUpperCase())} placeholder="BTC" />
+        </label>
+        <div className="context-meta">
+          <span>Active Slot: #{activeSlotIndex + 1}</span>
+          <span>Volume: {activeVolumePreview}</span>
+        </div>
+      </Card>
 
-      <button onClick={() => void onSave()} type="button">
-        Save
-      </button>
+      <Card className="slots-card">
+        <h2>Volume Slots</h2>
+        <div className="slots-list">
+          {slots.map((value, index) => (
+            <label key={index} className="slot-row">
+              <input
+                type="radio"
+                name="activeSlot"
+                checked={activeSlotIndex === index}
+                onChange={() => setActiveSlotIndex(index)}
+                aria-label={`Active slot ${index + 1}`}
+              />
+              <span className="slot-label">Slot {index + 1}</span>
+              <Input value={value} onChange={(event) => updateSlot(index, event.target.value)} placeholder="Volume" />
+            </label>
+          ))}
+        </div>
+      </Card>
 
-      <p className="status">{status}</p>
+      <Card className="footer-card">
+        <Button onClick={() => void onSave()} type="button">
+          Save Slots
+        </Button>
+        <p className="hint">Hold Alt + Left Click on chart to generate order draft.</p>
+        <p className="status">Status: {status}</p>
+      </Card>
     </main>
   );
 }
