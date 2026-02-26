@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Lighter Alt+Click",
+  "name": "One-Click Chart Scalper",
   "version": "0.1.0",
-  "description": "Alt+Click price logger with per-ticker volume slots",
+  "description": "Click-to-order scalping helper with configurable per-ticker volume slots",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"],
   "action": {
-    "default_title": "Lighter Alt+Click",
+    "default_title": "One-Click Chart Scalper",
     "default_popup": "index.html"
   },
   "content_scripts": [

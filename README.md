@@ -1,35 +1,72 @@
-# Lighter Alt+Click Extension (MVP)
+# One-Click Chart Scalper (MVP)
 
-## What it does
-- Runs on:
-  - `https://app.lighter.xyz/trade/*`
-  - `https://lighter.exchange/trade/*`
-- On `Alt + Left Click` on chart area, calculates clicked price from visible right price axis labels
-- Tries to detect current price and resolves side:
-  - `clickedPrice < currentPrice => buy`
-  - otherwise `sell`
-- Logs payload to console (API call placeholder)
-- Popup stores 5 volume slots per ticker in `chrome.storage.local`
+## What this product is
+One-Click Chart Scalper is a Chrome extension for fast chart-based scalping workflow.
 
-## Install
+You hold `Alt` and left-click on the chart, and the extension calculates:
+- clicked price
+- current mark price
+- intended side (`buy` or `sell`)
+- selected volume slot for the ticker
+
+Then it produces a structured order draft.
+
+## Important MVP status
+This version **does not place real orders yet**.  
+It only logs the order draft to DevTools Console so you can validate behavior before API execution is enabled.
+
+## Supported exchanges/pages
+- `https://app.lighter.xyz/trade/*`
+- `https://lighter.exchange/trade/*`
+
+## Why use it
+- Faster manual scalping workflow
+- Consistent click-to-side logic
+- Per-ticker volume presets (5 slots)
+- Foundation for future one-click order execution
+
+## How side is decided
+- If `clickedPrice < currentPrice` -> `buy`
+- If `clickedPrice >= currentPrice` -> `sell`
+
+## Install (for end users)
+1. Build the extension:
 ```bash
 pnpm install
 pnpm build
 ```
+2. Open `chrome://extensions`
+3. Turn on **Developer mode**
+4. Click **Load unpacked**
+5. Select the `dist` folder from this project
 
-Then load extension in Chrome:
-1. Open `chrome://extensions`
-2. Enable Developer Mode
-3. Load unpacked extension from `dist`
+## How to use
+1. Open a supported trade page, for example:
+   - `https://app.lighter.xyz/trade/BTC`
+2. Open the extension popup and set your volume slots for the ticker.
+3. Pick the active slot.
+4. Hold `Alt` and left-click in the chart area.
+5. Open DevTools Console and find:
+   - `[lighter-alt-click] draft-limit-order`
 
-## Usage
-1. Open `app.lighter.xyz/trade/BTC`
-   or `lighter.exchange/trade/BTC`
-2. Open extension popup and set slot volumes for `BTC`
-3. Select active slot via radio button
-4. On chart, press `Alt` and left-click
-5. Check DevTools console for `[lighter-alt-click] draft-limit-order`
+## What you will see in the log
+The payload includes:
+- `ticker`
+- `clickedPrice`
+- `currentPrice`
+- `side` and `action`
+- `slotVolume` / `activeSlotIndex`
+- `timestamp`
 
-## Notes
-- Current implementation is a DOM heuristic for price extraction.
-- Next step is replacing `submitLimitOrderDraft` with real API integration.
+## Troubleshooting
+- Nothing happens on click:
+  - Make sure you are on a supported `/trade/*` URL.
+  - Reload the extension in `chrome://extensions`.
+  - Refresh the trade page.
+- Wrong or missing output:
+  - Ensure chart is fully loaded before clicking.
+  - Check console for warnings with `[lighter-alt-click]`.
+
+## Privacy
+- Data is stored locally in `chrome.storage.local` for slot presets.
+- No remote order API call is made in this MVP.
