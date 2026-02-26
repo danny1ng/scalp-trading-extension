@@ -34,8 +34,15 @@ Order placement is real. Use with caution on live accounts.
 - See [DISCLAIMER.md](/root/projects/my/scalp-trading-extention/DISCLAIMER.md) for details.
 
 ## Supported exchanges/pages
-- `https://app.lighter.xyz/trade/*`
-- `https://lighter.exchange/trade/*`
+- Lighter
+
+## Coming soon
+- Asterdex
+- Bybit
+- Binance
+- MEXC
+
+Want support for another exchange? Open a GitHub Issue with your request.
 
 ## Icon behavior
 - Gray icon: current tab is not a supported `/trade/*` page.
