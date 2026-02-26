@@ -1,5 +1,5 @@
 {
-  "name": "lighter-alt-click-extension",
+  "name": "one-click-chart-scalper-extension",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,17 +10,17 @@
     "test": "vitest"
   },
   "dependencies": {
-    "react": "latest",
-    "react-dom": "latest"
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@types/chrome": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@vitejs/plugin-react": "latest",
-    "jsdom": "latest",
-    "typescript": "latest",
-    "vite": "latest",
-    "vitest": "latest"
+    "@types/chrome": "0.1.37",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.4",
+    "jsdom": "28.1.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.1",
+    "vitest": "4.0.18"
   }
 }

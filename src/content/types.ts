@@ -27,8 +27,8 @@ export type TickerSlotConfig = {
   activeSlotIndex: number;
 };
 
-export const LOG_PREFIX = '[lighter-alt-click]';
-export const MESSAGE_SOURCE = 'lighter-alt-click-extension';
+export const LOG_PREFIX = '[scalp-alt-click]';
+export const MESSAGE_SOURCE = 'scalp-alt-click-extension';
 export const MESSAGE_TYPE_DRAFT = 'lac-draft-limit-order';
 export const MESSAGE_TYPE_UI_DRY_RUN = 'lac-ui-dry-run';
 export const MESSAGE_TYPE_PRICE_REQUEST = 'lac-price-request';

@@ -64,7 +64,7 @@ pnpm build
 4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
 5. Hold `Alt` and left-click in the chart area.
 6. The extension automatically prepares and submits a limit order via UI.
-7. Optional: open DevTools Console and check extension logs (`[lighter-alt-click] ...`) for debugging.
+7. Optional: open DevTools Console and check extension logs (`[scalp-alt-click] ...`) for debugging.
 
 On supported pages, a floating in-page label shows `Slot N: Volume`.
 You can enable/disable this label and choose its corner per supported domain.
@@ -90,7 +90,7 @@ The log payload includes:
   - Ensure the URL is exactly a supported `/trade/*` route.
 - Wrong or missing output:
   - Ensure chart is fully loaded before clicking.
-  - Check console for warnings with `[lighter-alt-click]`.
+  - Check console for warnings with `[scalp-alt-click]`.
 
 ## Privacy
 - Data is stored locally in `chrome.storage.local` for slot presets.

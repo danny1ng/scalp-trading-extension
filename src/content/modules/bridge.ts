@@ -14,7 +14,7 @@ export type FormFillBridgeResponse = {
 };
 
 export function injectPagePriceBridge(): void {
-  const marker = '__lighterAltClickPageBridgeInjected';
+  const marker = '__scalpAltClickPageBridgeInjected';
   const markedDocument = document as Document & Record<string, unknown>;
   if (markedDocument[marker]) {
     return;

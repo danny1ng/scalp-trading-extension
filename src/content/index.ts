@@ -61,7 +61,7 @@ function bindTopWindowMessageBridge(): void {
     return;
   }
 
-  const key = '__lighterAltClickBridgeBound';
+  const key = '__scalpAltClickBridgeBound';
   const topWindow = window as Window & Record<string, unknown>;
   if (topWindow[key]) {
     return;
@@ -168,7 +168,7 @@ function bindOnCanvas(): void {
     return;
   }
 
-  const marker = '__lighterAltClickBound';
+  const marker = '__scalpAltClickBound';
   const markedDocument = document as Document & Record<string, unknown>;
   if (markedDocument[marker]) {
     return;

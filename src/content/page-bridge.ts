@@ -1,15 +1,15 @@
 (() => {
-  const source = 'lighter-alt-click-extension';
+  const source = 'scalp-alt-click-extension';
   const requestType = 'lac-price-request';
   const responseType = 'lac-price-response';
   const fillRequestType = 'lac-form-fill-request';
   const fillResponseType = 'lac-form-fill-response';
 
-  if ((window as Window & Record<string, unknown>).__lighterAltClickPageBridge) {
+  if ((window as Window & Record<string, unknown>).__scalpAltClickPageBridge) {
     return;
   }
 
-  (window as Window & Record<string, unknown>).__lighterAltClickPageBridge = true;
+  (window as Window & Record<string, unknown>).__scalpAltClickPageBridge = true;
   const fillInput = (input: HTMLInputElement | null, value: string): boolean => {
     if (!input) {
       return false;

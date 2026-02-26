@@ -232,7 +232,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
   }
 
   function bindSlotHotkeys(): void {
-    const marker = '__lighterAltClickHotkeysBound';
+    const marker = '__scalpAltClickHotkeysBound';
     const markedDocument = document as Document & Record<string, unknown>;
     if (markedDocument[marker]) {
       return;
@@ -265,7 +265,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
       return;
     }
 
-    const key = '__lighterAltClickStorageSyncBound';
+    const key = '__scalpAltClickStorageSyncBound';
     const topWindow = window as Window & Record<string, unknown>;
     if (topWindow[key]) {
       return;
