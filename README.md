@@ -113,6 +113,15 @@ The log payload includes:
 - No direct external trading API call is made by the extension itself in this MVP.
 - Orders are submitted by clicking existing exchange UI controls in your browser session.
 
+## Donations
+If this extension helps your workflow, you can support development:
+
+- EVM (ETH/USDT/USDC): `0x17CF3cD50CAe755C8c80765cFa238077A466dba8`
+- BTC: `bc1pzuneekuvzcqd9zjew890lx0776m770vsx0krzer2mqqm4vua37nqmupr6n`
+- SOL: `34UwmraTBwwUD1bh866sFyHuVobmaCZZV9crZp3caE6c`
+
+Donations are optional and do not provide guaranteed support or feature delivery.
+
 ## Open-source docs
 - License: [LICENSE](./LICENSE)
 - Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
