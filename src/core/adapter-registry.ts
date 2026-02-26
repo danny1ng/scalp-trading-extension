@@ -1,18 +1,5 @@
 import type { ExchangeAdapter } from './exchange-adapter';
-
-const lighterAdapter: ExchangeAdapter = {
-  id: 'lighter',
-  matches: (url: string) => {
-    try {
-      const parsed = new URL(url);
-      const isSupportedHost = parsed.hostname === 'app.lighter.xyz' || parsed.hostname === 'lighter.exchange';
-      const isTradePath = /^\/trade\//i.test(parsed.pathname);
-      return isSupportedHost && isTradePath;
-    } catch {
-      return false;
-    }
-  }
-};
+import { lighterAdapter } from '../exchanges/lighter/adapter';
 
 const adapters: ExchangeAdapter[] = [lighterAdapter];
 
