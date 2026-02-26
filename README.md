@@ -133,6 +133,7 @@ If this extension helps your workflow, you can support development:
 Donations are optional and do not provide guaranteed support or feature delivery.
 
 ## Open-source docs
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 - License: [LICENSE](./LICENSE)
 - Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Security: [SECURITY.md](./SECURITY.md)
