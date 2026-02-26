@@ -19,8 +19,13 @@ The popup is optimized for quick scalping setup:
 - per-domain chart label visibility and corner position settings
 
 ## Important MVP status
-This version **does not place real orders yet**.  
-It only logs the order draft to DevTools Console so you can validate behavior before API execution is enabled.
+This version places orders through the exchange UI flow:
+- switches to **Limit** order type
+- selects **Buy/Long** or **Sell/Short** side
+- fills price and amount inputs
+- clicks `data-testid="place-order-button"`
+
+Order placement is real. Use with caution on live accounts.
 
 ## Supported exchanges/pages
 - `https://app.lighter.xyz/trade/*`
@@ -34,7 +39,7 @@ It only logs the order draft to DevTools Console so you can validate behavior be
 - Faster manual scalping workflow
 - Consistent click-to-side logic
 - Per-ticker volume presets (5 slots)
-- Foundation for future one-click order execution
+- Real one-click order submission flow in the UI
 
 ## How side is decided
 - If `clickedPrice < currentPrice` -> `buy`
@@ -58,8 +63,8 @@ pnpm build
 3. Slot values auto-save when an input loses focus.
 4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
 5. Hold `Alt` and left-click in the chart area.
-6. Open DevTools Console and find:
-   - `[lighter-alt-click] draft-limit-order`
+6. The extension automatically prepares and submits a limit order via UI.
+7. Optional: open DevTools Console and check extension logs (`[lighter-alt-click] ...`) for debugging.
 
 On supported pages, a floating in-page label shows `Slot N: Volume`.
 You can enable/disable this label and choose its corner per supported domain.
@@ -67,7 +72,7 @@ You can enable/disable this label and choose its corner per supported domain.
 On unsupported pages, popup editors are hidden and a quick instruction is shown to open a supported `/trade/<TICKER>` URL first.
 
 ## What you will see in the log
-The payload includes:
+The log payload includes:
 - `ticker`
 - `clickedPrice`
 - `currentPrice`
@@ -89,4 +94,5 @@ The payload includes:
 
 ## Privacy
 - Data is stored locally in `chrome.storage.local` for slot presets.
-- No remote order API call is made in this MVP.
+- No direct external trading API call is made by the extension itself in this MVP.
+- Orders are submitted by clicking existing exchange UI controls in your browser session.
