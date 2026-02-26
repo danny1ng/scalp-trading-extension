@@ -1,7 +1,9 @@
 # Lighter Alt+Click Extension (MVP)
 
 ## What it does
-- Runs on `https://app.lighter.xyz/trade/*`
+- Runs on:
+  - `https://app.lighter.xyz/trade/*`
+  - `https://lighter.exchange/trade/*`
 - On `Alt + Left Click` on chart area, calculates clicked price from visible right price axis labels
 - Tries to detect current price and resolves side:
   - `clickedPrice < currentPrice => buy`
@@ -22,6 +24,7 @@ Then load extension in Chrome:
 
 ## Usage
 1. Open `app.lighter.xyz/trade/BTC`
+   or `lighter.exchange/trade/BTC`
 2. Open extension popup and set slot volumes for `BTC`
 3. Select active slot via radio button
 4. On chart, press `Alt` and left-click

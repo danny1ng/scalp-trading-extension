@@ -4,14 +4,14 @@
   "version": "0.1.0",
   "description": "Alt+Click price logger with per-ticker volume slots",
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://app.lighter.xyz/*"],
+  "host_permissions": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"],
   "action": {
     "default_title": "Lighter Alt+Click",
     "default_popup": "index.html"
   },
   "content_scripts": [
     {
-      "matches": ["https://app.lighter.xyz/trade/*"],
+      "matches": ["https://app.lighter.xyz/trade/*", "https://lighter.exchange/trade/*"],
       "js": ["assets/content.js"],
       "all_frames": true,
       "match_about_blank": true,
@@ -21,7 +21,7 @@
   "web_accessible_resources": [
     {
       "resources": ["assets/page-bridge.js"],
-      "matches": ["https://app.lighter.xyz/*"]
+      "matches": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"]
     }
   ]
 }
