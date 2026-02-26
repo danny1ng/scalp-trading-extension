@@ -16,6 +16,7 @@ The popup is optimized for quick scalping setup:
 - compact 5-slot volume editor
 - active-site status indicator
 - autosave on field blur (no manual save button)
+- per-domain chart label visibility and corner position settings
 
 ## Important MVP status
 This version **does not place real orders yet**.  
@@ -60,7 +61,8 @@ pnpm build
 6. Open DevTools Console and find:
    - `[lighter-alt-click] draft-limit-order`
 
-On supported pages, a floating in-page label shows current ticker, active slot, and selected slot volume.
+On supported pages, a floating in-page label shows `Slot N: Volume`.
+You can enable/disable this label and choose its corner per supported domain.
 
 On unsupported pages, popup editors are hidden and a quick instruction is shown to open a supported `/trade/<TICKER>` URL first.
 

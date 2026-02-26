@@ -20,8 +20,15 @@ const MESSAGE_TYPE_DRAFT = 'lac-draft-limit-order';
 const MESSAGE_TYPE_PRICE_REQUEST = 'lac-price-request';
 const MESSAGE_TYPE_PRICE_RESPONSE = 'lac-price-response';
 const STORAGE_KEY = 'lighterVolumeByTicker';
+const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
 
 type SlotValue = number | null;
+type HudCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+type HudSettings = {
+  enabled: boolean;
+  corner: HudCorner;
+};
 
 type TickerSlotConfig = {
   slots: SlotValue[];
@@ -35,6 +42,10 @@ let activeTicker: string | null = null;
 let activeSlotConfig: TickerSlotConfig = {
   slots: [null, null, null, null, null],
   activeSlotIndex: 0
+};
+let activeHudSettings: HudSettings = {
+  enabled: true,
+  corner: 'bottom-right'
 };
 let hudElement: HTMLDivElement | null = null;
 
@@ -70,6 +81,29 @@ function normalizeConfig(raw: unknown): TickerSlotConfig {
   return { slots, activeSlotIndex };
 }
 
+function normalizeHudCorner(value: unknown): HudCorner {
+  if (value === 'top-left' || value === 'top-right' || value === 'bottom-left' || value === 'bottom-right') {
+    return value;
+  }
+
+  return 'bottom-right';
+}
+
+function normalizeHudSettings(raw: unknown): HudSettings {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      enabled: true,
+      corner: 'bottom-right'
+    };
+  }
+
+  const settings = raw as Partial<HudSettings>;
+  return {
+    enabled: typeof settings.enabled === 'boolean' ? settings.enabled : true,
+    corner: normalizeHudCorner(settings.corner)
+  };
+}
+
 async function readConfigByTicker(ticker: string): Promise<TickerSlotConfig> {
   if (!chrome.storage?.local) {
     return normalizeConfig(undefined);
@@ -97,12 +131,36 @@ async function writeConfigByTicker(ticker: string, config: TickerSlotConfig): Pr
   await chrome.storage.local.set({ [STORAGE_KEY]: nextStore });
 }
 
+async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
+  if (!chrome.storage?.local) {
+    return normalizeHudSettings(undefined);
+  }
+
+  const result = await chrome.storage.local.get(HUD_STORAGE_KEY);
+  const store = result[HUD_STORAGE_KEY];
+  if (!store || typeof store !== 'object') {
+    return normalizeHudSettings(undefined);
+  }
+
+  const typedStore = store as Record<string, unknown>;
+  return normalizeHudSettings(typedStore[domain.toLowerCase()]);
+}
+
 function getSelectedSlotVolume(): number | null {
   return activeSlotConfig.slots[activeSlotConfig.activeSlotIndex];
 }
 
 function ensureHudElement(): HTMLDivElement | null {
   if (window.top !== window) {
+    return null;
+  }
+
+  if (!activeHudSettings.enabled) {
+    if (hudElement && document.body.contains(hudElement)) {
+      hudElement.remove();
+    }
+
+    hudElement = null;
     return null;
   }
 
@@ -121,7 +179,7 @@ function ensureHudElement(): HTMLDivElement | null {
   element.style.border = '1px solid rgba(49, 201, 164, 0.55)';
   element.style.background = 'rgba(5, 16, 24, 0.88)';
   element.style.color = '#d7fff4';
-  element.style.font = '600 12px/1.25 Segoe UI, Inter, Roboto, sans-serif';
+  element.style.font = '700 14px/1.25 Segoe UI, Inter, Roboto, sans-serif';
   element.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
   element.style.pointerEvents = 'none';
 
@@ -130,17 +188,45 @@ function ensureHudElement(): HTMLDivElement | null {
   return element;
 }
 
+function applyHudCorner(element: HTMLDivElement, corner: HudCorner): void {
+  element.style.top = '';
+  element.style.right = '';
+  element.style.bottom = '';
+  element.style.left = '';
+
+  if (corner === 'top-left') {
+    element.style.top = '14px';
+    element.style.left = '14px';
+    return;
+  }
+
+  if (corner === 'top-right') {
+    element.style.top = '14px';
+    element.style.right = '14px';
+    return;
+  }
+
+  if (corner === 'bottom-left') {
+    element.style.bottom = '14px';
+    element.style.left = '14px';
+    return;
+  }
+
+  element.style.bottom = '14px';
+  element.style.right = '14px';
+}
+
 function renderHud(): void {
   const element = ensureHudElement();
   if (!element) {
     return;
   }
 
+  applyHudCorner(element, activeHudSettings.corner);
   const activeSlot = activeSlotConfig.activeSlotIndex + 1;
   const rawVolume = getSelectedSlotVolume();
   const volume = rawVolume === null ? 'Not set' : String(rawVolume);
-  const tickerLabel = activeTicker ?? 'Unknown';
-  element.textContent = `One-Click Chart Scalper | ${tickerLabel} | Slot ${activeSlot}: ${volume}`;
+  element.textContent = `Slot ${activeSlot}: ${volume}`;
 }
 
 async function loadSlotConfigFromStorage(): Promise<void> {
@@ -156,6 +242,11 @@ async function loadSlotConfigFromStorage(): Promise<void> {
   }
 
   activeSlotConfig = await readConfigByTicker(activeTicker);
+  renderHud();
+}
+
+async function loadHudSettingsFromStorage(): Promise<void> {
+  activeHudSettings = await readHudSettingsByDomain(window.location.hostname);
   renderHud();
 }
 
@@ -389,18 +480,26 @@ function bindStorageSync(): void {
 
   topWindow[key] = true;
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== 'local' || !changes[STORAGE_KEY] || !activeTicker) {
+    if (areaName !== 'local') {
       return;
     }
 
-    const nextStore = changes[STORAGE_KEY].newValue;
-    if (!nextStore || typeof nextStore !== 'object') {
-      return;
+    if (changes[STORAGE_KEY] && activeTicker) {
+      const nextStore = changes[STORAGE_KEY].newValue;
+      if (nextStore && typeof nextStore === 'object') {
+        const nextConfig = normalizeConfig((nextStore as Record<string, unknown>)[activeTicker.toUpperCase()]);
+        activeSlotConfig = nextConfig;
+        renderHud();
+      }
     }
 
-    const nextConfig = normalizeConfig((nextStore as Record<string, unknown>)[activeTicker.toUpperCase()]);
-    activeSlotConfig = nextConfig;
-    renderHud();
+    if (changes[HUD_STORAGE_KEY]) {
+      const nextStore = changes[HUD_STORAGE_KEY].newValue;
+      if (nextStore && typeof nextStore === 'object') {
+        activeHudSettings = normalizeHudSettings((nextStore as Record<string, unknown>)[window.location.hostname.toLowerCase()]);
+        renderHud();
+      }
+    }
   });
 }
 
@@ -444,6 +543,7 @@ function bindOnCanvas(): void {
 
 bindTopWindowMessageBridge();
 void loadSlotConfigFromStorage();
+void loadHudSettingsFromStorage();
 bindOnCanvas();
 bindSlotHotkeys();
 bindStorageSync();

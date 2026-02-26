@@ -3,6 +3,13 @@ import { Badge } from './components/ui/badge';
 import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
 import { isSupportedTradeUrl } from './core/supported-url';
+import {
+  domainFromUrl,
+  getDefaultHudSettings,
+  getHudSettingsForDomain,
+  saveHudSettingsForDomain,
+  type HudCorner
+} from './lib/hud-settings';
 import { getTickerSlotConfig, saveTickerSlotConfig, type SlotValue } from './lib/slots-storage';
 import { tickerFromTradeUrl } from './lib/ticker';
 
@@ -52,6 +59,8 @@ export default function App() {
   const [slots, setSlots] = useState<DraftSlots>(['', '', '', '', '']);
   const [activeSlotIndex, setActiveSlotIndex] = useState(0);
   const [status, setStatus] = useState<'idle' | 'loaded' | 'saved'>('idle');
+  const [hudEnabled, setHudEnabled] = useState(getDefaultHudSettings().enabled);
+  const [hudCorner, setHudCorner] = useState<HudCorner>(getDefaultHudSettings().corner);
   const [tabContext, setTabContext] = useState<ActiveTabContext>({
     url: null,
     ticker: null,
@@ -81,6 +90,25 @@ export default function App() {
     void load();
   }, [ticker]);
 
+  useEffect(() => {
+    async function loadHudSettings() {
+      if (!tabContext.supported) {
+        return;
+      }
+
+      const domain = domainFromUrl(tabContext.url);
+      if (!domain) {
+        return;
+      }
+
+      const settings = await getHudSettingsForDomain(domain);
+      setHudEnabled(settings.enabled);
+      setHudCorner(settings.corner);
+    }
+
+    void loadHudSettings();
+  }, [tabContext.supported, tabContext.url]);
+
   async function persistDraft(nextSlots: DraftSlots, nextActiveSlotIndex: number): Promise<void> {
     await saveTickerSlotConfig(ticker, {
       slots: parseDraftSlots(nextSlots),
@@ -104,6 +132,25 @@ export default function App() {
   async function selectActiveSlot(index: number): Promise<void> {
     setActiveSlotIndex(index);
     await persistDraft(slots, index);
+  }
+
+  async function persistHudSettings(next: { enabled: boolean; corner: HudCorner }): Promise<void> {
+    const domain = domainFromUrl(tabContext.url);
+    if (!domain) {
+      return;
+    }
+
+    await saveHudSettingsForDomain(domain, next);
+  }
+
+  async function onToggleHud(enabled: boolean): Promise<void> {
+    setHudEnabled(enabled);
+    await persistHudSettings({ enabled, corner: hudCorner });
+  }
+
+  async function onChangeHudCorner(corner: HudCorner): Promise<void> {
+    setHudCorner(corner);
+    await persistHudSettings({ enabled: hudEnabled, corner });
   }
 
   const activeVolumePreview = useMemo(() => {
@@ -163,6 +210,21 @@ export default function App() {
           </Card>
 
           <Card className="footer-card">
+            <div className="hud-settings">
+              <label className="hud-toggle">
+                <input type="checkbox" checked={hudEnabled} onChange={(event) => void onToggleHud(event.target.checked)} />
+                <span>Show chart label</span>
+              </label>
+              <label className="hud-corner">
+                <span>Label position</span>
+                <select value={hudCorner} onChange={(event) => void onChangeHudCorner(event.target.value as HudCorner)}>
+                  <option value="top-left">Top Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                </select>
+              </label>
+            </div>
             <p className="hint">Hold Alt + Left Click on chart to generate order draft.</p>
             <p className="hint">Use Alt + 1..5 to switch active slot.</p>
             <p className="status">Status: {status}</p>
