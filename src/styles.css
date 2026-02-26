@@ -6,8 +6,8 @@
   --text: #f3f6fb;
   --text-soft: #9fb0c8;
   --muted: #6b7280;
-  --accent: #84cc16;
-  --accent-soft: rgba(132, 204, 22, 0.18);
+  --accent: #31c9a4;
+  --accent-soft: rgba(49, 201, 164, 0.22);
 
   font-family: 'Segoe UI', 'Inter', 'Roboto', sans-serif;
   color: var(--text);
@@ -22,8 +22,8 @@ body {
   margin: 0;
   min-width: 360px;
   background:
-    radial-gradient(circle at 15% 0%, rgba(132, 204, 22, 0.18), transparent 32%),
-    radial-gradient(circle at 85% 100%, rgba(132, 204, 22, 0.09), transparent 28%),
+    radial-gradient(circle at 15% 0%, rgba(49, 201, 164, 0.2), transparent 32%),
+    radial-gradient(circle at 85% 100%, rgba(49, 201, 164, 0.11), transparent 28%),
     var(--bg);
 }
 
@@ -141,7 +141,7 @@ input[type='radio'] {
 
 .ui-button--primary {
   background: var(--accent);
-  color: #0f172a;
+  color: #06201b;
 }
 
 .ui-button--ghost {
@@ -153,6 +153,7 @@ input[type='radio'] {
 .ui-badge {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
