@@ -21,8 +21,8 @@ Then load extension in Chrome:
 3. Load unpacked extension from `dist`
 
 ## Usage
-1. Open `app.lighter.xyz/trade/ARC`
-2. Open extension popup and set slot volumes for `ARC`
+1. Open `app.lighter.xyz/trade/BTC`
+2. Open extension popup and set slot volumes for `BTC`
 3. Select active slot via radio button
 4. On chart, press `Alt` and left-click
 5. Check DevTools console for `[lighter-alt-click] draft-limit-order`

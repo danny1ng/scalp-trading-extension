@@ -1,37 +1,37 @@
 # Lighter Alt+Click MVP Design
 
 ## Goal
-Сделать Chrome MV3 расширение для `https://app.lighter.xyz/trade/*`, которое на `Alt + Left Click` по чару вычисляет цену клика и пишет структурированный лог в консоль. Добавить popup для хранения 5 слотов объема по тикеру в `chrome.storage.local`.
+Build a Chrome MV3 extension for `https://app.lighter.xyz/trade/*` that calculates the clicked chart price on `Alt + Left Click` and prints a structured console log. Add a popup to store 5 per-ticker volume slots in `chrome.storage.local`.
 
 ## Scope (MVP)
-- Контент-скрипт слушает `Alt + Left Mouse`.
-- Вычисляет `clickedPrice` по видимым меткам price-axis справа с линейной интерполяцией.
-- Определяет тикер из URL `/trade/:ticker`.
-- Пытается получить текущую цену (`currentPrice`) из DOM.
-- Вычисляет сторону: `clickedPrice < currentPrice => buy`, иначе `sell`.
-- Лог в `console.log` с payload для будущего API.
-- Popup на React: тикер + 5 слотов объема, сохранение/чтение из `chrome.storage.local`.
+- Content script listens for `Alt + Left Mouse`.
+- Computes `clickedPrice` from visible right-side price-axis labels with linear interpolation.
+- Extracts ticker from URL `/trade/:ticker`.
+- Attempts to get current price (`currentPrice`) from DOM.
+- Computes side: `clickedPrice < currentPrice => buy`, otherwise `sell`.
+- Logs payload to `console.log` for future API integration.
+- React popup: ticker + 5 volume slots, read/write via `chrome.storage.local`.
 
 ## Architecture
-- `src/content/index.ts`: обработчик событий, orchestration.
-- `src/lib/price-axis.ts`: парсинг price labels и интерполяция.
-- `src/lib/ticker.ts`: тикер из URL.
-- `src/lib/side.ts`: правило buy/sell.
-- `src/lib/slots-storage.ts`: чтение/запись слотов.
+- `src/content/index.ts`: event handlers and orchestration.
+- `src/lib/price-axis.ts`: price-label parsing and interpolation.
+- `src/lib/ticker.ts`: ticker extraction from URL.
+- `src/lib/side.ts`: buy/sell rule.
+- `src/lib/slots-storage.ts`: slot read/write.
 - `src/App.tsx`: UI popup.
 
 ## Error Handling
-- Нет валидных price labels: логировать предупреждение и завершать обработку.
-- Нет currentPrice: side=`unknown`, но clickedPrice логируется.
-- Пустые/невалидные слоты: сохранять как `null`.
+- No valid price labels: log warning and stop processing.
+- No currentPrice: set `side='unknown'`, still log `clickedPrice`.
+- Empty/invalid slots: store as `null`.
 
 ## Testing
-- Unit-тесты на:
-  - интерполяцию цены по двум меткам,
-  - парсинг чисел,
-  - сторону buy/sell,
-  - извлечение тикера из URL,
-  - нормализацию слотов.
+- Unit tests for:
+  - price interpolation between two labels,
+  - numeric parsing,
+  - buy/sell side selection,
+  - ticker extraction from URL,
+  - slot normalization.
 
 ## Future API Hook
-- Заглушка `submitLimitOrderDraft(payload)` в content-скрипте.
+- Stub `submitLimitOrderDraft(payload)` in content script.

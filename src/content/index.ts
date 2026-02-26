@@ -5,6 +5,7 @@ type DraftOrderPayload = {
   clickedPrice: number;
   currentPrice: number | null;
   side: OrderSide;
+  action: 'buy' | 'sell' | 'unknown';
   slotVolume: number | null;
   activeSlotIndex: number;
   clickY: number;
@@ -45,6 +46,18 @@ function decideSide(clickedPrice: number, currentPrice: number | null): OrderSid
   }
 
   return clickedPrice < currentPrice ? 'buy' : 'sell';
+}
+
+function sideToAction(side: OrderSide): DraftOrderPayload['action'] {
+  if (side === 'buy') {
+    return 'buy';
+  }
+
+  if (side === 'sell') {
+    return 'sell';
+  }
+
+  return 'unknown';
 }
 
 function getActiveChartWindow(): (Window & Record<string, unknown>) | null {
@@ -419,6 +432,7 @@ async function handleAltLeftClick(event: MouseEvent): Promise<void> {
     clickedPrice,
     currentPrice,
     side,
+    action: sideToAction(side),
     slotVolume: null,
     activeSlotIndex: 0,
     clickY: event.clientY,
