@@ -61,6 +61,16 @@ Want support for another exchange? Open a GitHub Issue with your request.
 - If `clickedPrice >= currentPrice` -> `sell`
 
 ## Install (for end users)
+### Option A: from GitHub Release (recommended)
+1. Open the latest GitHub Release for this project.
+2. Download `scalp-alt-click-vX.Y.Z.zip`.
+3. Unzip it to a folder on your machine.
+4. Open `chrome://extensions`.
+5. Turn on **Developer mode**.
+6. Click **Load unpacked**.
+7. Select the unzipped folder.
+
+### Option B: build locally
 1. Build the extension:
 ```bash
 pnpm install
