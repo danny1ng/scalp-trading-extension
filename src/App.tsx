@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from './components/ui/badge';
-import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
 import { isSupportedTradeUrl } from './core/supported-url';
@@ -82,10 +81,10 @@ export default function App() {
     void load();
   }, [ticker]);
 
-  async function onSave(): Promise<void> {
+  async function persistDraft(nextSlots: DraftSlots, nextActiveSlotIndex: number): Promise<void> {
     await saveTickerSlotConfig(ticker, {
-      slots: parseDraftSlots(slots),
-      activeSlotIndex
+      slots: parseDraftSlots(nextSlots),
+      activeSlotIndex: nextActiveSlotIndex
     });
     setStatus('saved');
   }
@@ -98,10 +97,21 @@ export default function App() {
     });
   }
 
+  async function commitCurrentDraft(): Promise<void> {
+    await persistDraft(slots, activeSlotIndex);
+  }
+
+  async function selectActiveSlot(index: number): Promise<void> {
+    setActiveSlotIndex(index);
+    await persistDraft(slots, index);
+  }
+
   const activeVolumePreview = useMemo(() => {
     const value = slots[activeSlotIndex];
     return value.trim() === '' ? 'Not set' : value;
   }, [slots, activeSlotIndex]);
+
+  const displayTicker = tabContext.ticker ?? ticker;
 
   return (
     <main className="popup">
@@ -115,43 +125,58 @@ export default function App() {
         </Badge>
       </Card>
 
-      <Card className="context-card">
-        <label className="field">
-          <span>Ticker</span>
-          <Input value={ticker} onChange={(event) => setTicker(event.target.value.toUpperCase())} placeholder="BTC" />
-        </label>
-        <div className="context-meta">
-          <span>Active Slot: #{activeSlotIndex + 1}</span>
-          <span>Volume: {activeVolumePreview}</span>
-        </div>
-      </Card>
+      {tabContext.supported ? (
+        <>
+          <Card className="context-card">
+            <div className="field">
+              <span>Ticker</span>
+              <div className="ticker-value">{displayTicker}</div>
+            </div>
+            <div className="context-meta">
+              <span>Active Slot: #{activeSlotIndex + 1}</span>
+              <span>Volume: {activeVolumePreview}</span>
+            </div>
+          </Card>
 
-      <Card className="slots-card">
-        <h2>Volume Slots</h2>
-        <div className="slots-list">
-          {slots.map((value, index) => (
-            <label key={index} className="slot-row">
-              <input
-                type="radio"
-                name="activeSlot"
-                checked={activeSlotIndex === index}
-                onChange={() => setActiveSlotIndex(index)}
-                aria-label={`Active slot ${index + 1}`}
-              />
-              <span className="slot-label">Slot {index + 1}</span>
-              <Input value={value} onChange={(event) => updateSlot(index, event.target.value)} placeholder="Volume" />
-            </label>
-          ))}
-        </div>
-      </Card>
+          <Card className="slots-card">
+            <h2>Volume Slots</h2>
+            <div className="slots-list">
+              {slots.map((value, index) => (
+                <label key={index} className="slot-row">
+                  <input
+                    type="radio"
+                    name="activeSlot"
+                    checked={activeSlotIndex === index}
+                    onChange={() => void selectActiveSlot(index)}
+                    aria-label={`Active slot ${index + 1}`}
+                  />
+                  <span className="slot-label">Slot {index + 1}</span>
+                  <Input
+                    value={value}
+                    onChange={(event) => updateSlot(index, event.target.value)}
+                    onBlur={() => void commitCurrentDraft()}
+                    placeholder="Volume"
+                  />
+                </label>
+              ))}
+            </div>
+          </Card>
 
-      <Card className="footer-card">
-        <Button onClick={() => void onSave()} type="button">
-          Save Slots
-        </Button>
-        <p className="hint">Hold Alt + Left Click on chart to generate order draft.</p>
-        <p className="status">Status: {status}</p>
-      </Card>
+          <Card className="footer-card">
+            <p className="hint">Hold Alt + Left Click on chart to generate order draft.</p>
+            <p className="hint">Use Alt + 1..5 to switch active slot.</p>
+            <p className="status">Status: {status}</p>
+          </Card>
+        </>
+      ) : (
+        <Card className="unsupported-card">
+          <h2>How to start</h2>
+          <p>
+            Open a supported platform trade page first, choose a ticker, then volume slots will become available in this
+            popup.
+          </p>
+        </Card>
+      )}
     </main>
   );
 }

@@ -15,6 +15,7 @@ The popup is optimized for quick scalping setup:
 - bold fintech visual style
 - compact 5-slot volume editor
 - active-site status indicator
+- autosave on field blur (no manual save button)
 
 ## Important MVP status
 This version **does not place real orders yet**.  
@@ -26,7 +27,7 @@ It only logs the order draft to DevTools Console so you can validate behavior be
 
 ## Icon behavior
 - Gray icon: current tab is not a supported `/trade/*` page.
-- Green icon: current tab is a supported `/trade/*` page.
+- Teal icon: current tab is a supported `/trade/*` page.
 
 ## Why use it
 - Faster manual scalping workflow
@@ -53,10 +54,15 @@ pnpm build
 1. Open a supported trade page, for example:
    - `https://app.lighter.xyz/trade/BTC`
 2. Open the extension popup and set your volume slots for the ticker.
-3. Pick the active slot.
-4. Hold `Alt` and left-click in the chart area.
-5. Open DevTools Console and find:
+3. Slot values auto-save when an input loses focus.
+4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
+5. Hold `Alt` and left-click in the chart area.
+6. Open DevTools Console and find:
    - `[lighter-alt-click] draft-limit-order`
+
+On supported pages, a floating in-page label shows current ticker, active slot, and selected slot volume.
+
+On unsupported pages, popup editors are hidden and a quick instruction is shown to open a supported `/trade/<TICKER>` URL first.
 
 ## What you will see in the log
 The payload includes:
