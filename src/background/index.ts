@@ -1,91 +1,122 @@
 import { isSupportedTradeUrl } from '../core/supported-url';
 
-const INACTIVE_COLOR = '#6B7280';
-const ACTIVE_COLOR = '#84CC16';
-const BG_COLOR = '#0F172A';
+const ICON_SIZES = [16, 32, 48, 128] as const;
 
-function drawIcon(size: number, accent: string): ImageData {
+type IconSize = (typeof ICON_SIZES)[number];
+type IconSet = Record<IconSize, ImageData>;
+
+type Palette = {
+  bg: string;
+  line: string;
+  dot: string;
+  gradientStart?: string;
+  gradientEnd?: string;
+};
+
+const ACTIVE_PALETTE: Palette = {
+  bg: '#1A1A1A',
+  line: '#00C853',
+  dot: '#FFFFFF',
+  gradientStart: '#00C853',
+  gradientEnd: '#B2FF59'
+};
+
+const INACTIVE_PALETTE: Palette = {
+  bg: '#424242',
+  line: '#EEEEEE',
+  dot: '#FFFFFF'
+};
+
+function drawCircle(ctx: OffscreenCanvasRenderingContext2D, x: number, y: number, r: number): void {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawRoundedRect(
+  ctx: OffscreenCanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+): void {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawChartIcon(size: IconSize, palette: Palette): ImageData {
   const canvas = new OffscreenCanvas(size, size);
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Failed to get OffscreenCanvas context');
   }
 
-  const pad = Math.max(1, Math.floor(size * 0.08));
-  const radius = Math.max(2, Math.floor(size * 0.22));
-
   ctx.clearRect(0, 0, size, size);
+  ctx.scale(size / 100, size / 100);
 
-  // Outer rounded square
-  ctx.fillStyle = BG_COLOR;
-  ctx.beginPath();
-  ctx.moveTo(pad + radius, pad);
-  ctx.lineTo(size - pad - radius, pad);
-  ctx.quadraticCurveTo(size - pad, pad, size - pad, pad + radius);
-  ctx.lineTo(size - pad, size - pad - radius);
-  ctx.quadraticCurveTo(size - pad, size - pad, size - pad - radius, size - pad);
-  ctx.lineTo(pad + radius, size - pad);
-  ctx.quadraticCurveTo(pad, size - pad, pad, size - pad - radius);
-  ctx.lineTo(pad, pad + radius);
-  ctx.quadraticCurveTo(pad, pad, pad + radius, pad);
-  ctx.closePath();
-  ctx.fill();
-
-  // Geometric mark: rising zig-zag + arrow head
-  const w = size - pad * 2;
-  const h = size - pad * 2;
-  const x0 = pad + w * 0.2;
-  const y0 = pad + h * 0.68;
-  const x1 = pad + w * 0.42;
-  const y1 = pad + h * 0.5;
-  const x2 = pad + w * 0.57;
-  const y2 = pad + h * 0.58;
-  const x3 = pad + w * 0.78;
-  const y3 = pad + h * 0.33;
-
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = Math.max(1.6, size * 0.11);
+  if (palette.gradientStart && palette.gradientEnd) {
+    const lineGradient = ctx.createLinearGradient(0, 100, 100, 0);
+    lineGradient.addColorStop(0, palette.gradientStart);
+    lineGradient.addColorStop(1, palette.gradientEnd);
+    ctx.strokeStyle = lineGradient;
+  } else {
+    ctx.strokeStyle = palette.line;
+  }
+  ctx.fillStyle = palette.bg;
+  drawRoundedRect(ctx, 5, 5, 90, 90, 15);
+  ctx.lineWidth = 8;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.lineTo(x3, y3);
+  ctx.moveTo(20, 75);
+  ctx.lineTo(40, 50);
+  ctx.lineTo(55, 70);
+  ctx.lineTo(75, 35);
+  ctx.lineTo(85, 20);
+  ctx.lineTo(85, 40);
+  ctx.moveTo(85, 20);
+  ctx.lineTo(65, 20);
   ctx.stroke();
 
-  const ah = Math.max(2, size * 0.1);
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.moveTo(x3, y3 - ah * 0.9);
-  ctx.lineTo(x3 + ah * 0.95, y3 + ah * 0.2);
-  ctx.lineTo(x3 - ah * 0.35, y3 + ah * 0.5);
-  ctx.closePath();
-  ctx.fill();
+  ctx.fillStyle = palette.dot;
+  drawCircle(ctx, 85, 20, 5);
 
   return ctx.getImageData(0, 0, size, size);
 }
 
-function buildIconSet(accent: string): Record<number, ImageData> {
+function buildIconSet(palette: Palette): IconSet {
   return {
-    16: drawIcon(16, accent),
-    32: drawIcon(32, accent),
-    48: drawIcon(48, accent),
-    128: drawIcon(128, accent)
+    16: drawChartIcon(16, palette),
+    32: drawChartIcon(32, palette),
+    48: drawChartIcon(48, palette),
+    128: drawChartIcon(128, palette)
   };
 }
 
-const ICON_INACTIVE = buildIconSet(INACTIVE_COLOR);
-const ICON_ACTIVE = buildIconSet(ACTIVE_COLOR);
+const ACTIVE_ICONS = buildIconSet(ACTIVE_PALETTE);
+const INACTIVE_ICONS = buildIconSet(INACTIVE_PALETTE);
 
 async function setIconForTab(tabId: number, url?: string): Promise<void> {
   const isActive = typeof url === 'string' && isSupportedTradeUrl(url);
-  await chrome.action.setIcon({ tabId, imageData: isActive ? ICON_ACTIVE : ICON_INACTIVE });
+  await chrome.action.setIcon({ tabId, imageData: isActive ? ACTIVE_ICONS : INACTIVE_ICONS });
 }
 
 async function updateIconForActiveTab(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (!tab?.id) {
+    await chrome.action.setIcon({ imageData: INACTIVE_ICONS });
     return;
   }
 
