@@ -1,11 +1,11 @@
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
 import type { HudCorner, HudSettings, SlotValue, TickerSlotConfig } from '../types';
 import { LOG_PREFIX } from '../types';
-import { getDefaultSafeMode, getSafeModeStorageKey } from '../../lib/safe-mode-settings';
 
 const STORAGE_KEY = 'lighterVolumeByTicker';
 const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
-const SAFE_MODE_KEY = getSafeModeStorageKey();
+const SAFE_MODE_KEY = 'lacSafeModeByDomain';
+const DEFAULT_SAFE_MODE = true;
 
 function normalizeSlots(input: unknown[]): SlotValue[] {
   const normalized: SlotValue[] = [null, null, null, null, null];
@@ -105,18 +105,18 @@ async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
 }
 
 function normalizeSafeMode(raw: unknown): boolean {
-  return typeof raw === 'boolean' ? raw : getDefaultSafeMode();
+  return typeof raw === 'boolean' ? raw : DEFAULT_SAFE_MODE;
 }
 
 async function readSafeModeByDomain(domain: string): Promise<boolean> {
   if (!chrome.storage?.local) {
-    return getDefaultSafeMode();
+    return DEFAULT_SAFE_MODE;
   }
 
   const result = await chrome.storage.local.get(SAFE_MODE_KEY);
   const store = result[SAFE_MODE_KEY];
   if (!store || typeof store !== 'object') {
-    return getDefaultSafeMode();
+    return DEFAULT_SAFE_MODE;
   }
 
   const typedStore = store as Record<string, unknown>;
@@ -133,7 +133,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     enabled: true,
     corner: 'bottom-right'
   };
-  let activeSafeMode = getDefaultSafeMode();
+  let activeSafeMode = DEFAULT_SAFE_MODE;
   let hudElement: HTMLDivElement | null = null;
 
   function getSelectedSlotVolume(): number | null {
@@ -325,17 +325,34 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
         if (nextStore && typeof nextStore === 'object') {
           activeSafeMode = normalizeSafeMode((nextStore as Record<string, unknown>)[window.location.hostname.toLowerCase()]);
         } else {
-          activeSafeMode = getDefaultSafeMode();
+          activeSafeMode = DEFAULT_SAFE_MODE;
         }
       }
     });
   }
 
-  function syncTickerFromLocation(): void {
-    if (!activeTicker && activeAdapter) {
-      activeTicker = activeAdapter.getTicker(window.top?.location.href ?? window.location.href);
-      renderHud();
+  async function syncTickerFromLocation(): Promise<void> {
+    if (!activeAdapter) {
+      return;
     }
+
+    const nextTicker = activeAdapter.getTicker(window.top?.location.href ?? window.location.href);
+    if (!nextTicker) {
+      if (activeTicker !== null) {
+        activeTicker = null;
+        activeSlotConfig = normalizeConfig(undefined);
+        renderHud();
+      }
+      return;
+    }
+
+    if (nextTicker === activeTicker) {
+      return;
+    }
+
+    activeTicker = nextTicker;
+    activeSlotConfig = await readConfigByTicker(nextTicker);
+    renderHud();
   }
 
   function getActiveSlotIndex(): number {
