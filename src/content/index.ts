@@ -13,7 +13,15 @@ import {
 
 document.documentElement.setAttribute('data-lac-injected', '1');
 
-const activeAdapter = resolveAdapterForUrl(window.location.href);
+function resolveRuntimeUrl(): string {
+  try {
+    return window.top?.location.href ?? window.location.href;
+  } catch {
+    return window.location.href;
+  }
+}
+
+const activeAdapter = resolveAdapterForUrl(resolveRuntimeUrl());
 const hudSlotsController = createHudSlotsController(activeAdapter);
 
 function decideSide(clickedPrice: number, currentPrice: number | null): OrderSide {
@@ -90,7 +98,7 @@ function bindTopWindowMessageBridge(): void {
     }
 
     if (data.type === MESSAGE_TYPE_UI_EXECUTE && data.payload) {
-      void executeUiOrderFlow(data.payload, { safeMode: hudSlotsController.getSafeMode() }).catch((error: unknown) => {
+      void executeUiOrderFlow(data.payload, activeAdapter).catch((error: unknown) => {
         setExecutionStatus('failed', 'execute-handler-failed');
         console.error(`${LOG_PREFIX} ui-order-submit handler failed`, error);
       });
@@ -98,12 +106,12 @@ function bindTopWindowMessageBridge(): void {
   });
 }
 
-async function handleAltLeftClick(event: MouseEvent): Promise<void> {
+async function handleAltLeftClick(event: MouseEvent, sourceDocument: Document = document): Promise<void> {
   if (!activeAdapter || !event.altKey || event.button !== 0) {
     return;
   }
 
-  if (!activeAdapter.isClickInsideChartArea(event, document)) {
+  if (!activeAdapter.isClickInsideChartArea(event, sourceDocument)) {
     return;
   }
 
@@ -155,34 +163,34 @@ async function handleAltLeftClick(event: MouseEvent): Promise<void> {
     return;
   }
 
-  void executeUiOrderFlow(draftPayload, { safeMode: hudSlotsController.getSafeMode() });
+  void executeUiOrderFlow(draftPayload, activeAdapter);
 }
 
-function bindOnCanvas(): void {
+function bindOnDocument(targetDocument: Document): void {
   if (!activeAdapter) {
     document.documentElement.setAttribute('data-lac-adapter', 'missing');
     return;
   }
 
-  if (!activeAdapter.getChartCanvas(document)) {
+  if (!activeAdapter.getChartCanvas(targetDocument)) {
     return;
   }
 
   const marker = '__scalpAltClickBound';
-  const markedDocument = document as Document & Record<string, unknown>;
+  const markedDocument = targetDocument as Document & Record<string, unknown>;
   if (markedDocument[marker]) {
     return;
   }
 
   markedDocument[marker] = true;
-  injectPagePriceBridge();
+  injectPagePriceBridge(targetDocument);
   document.documentElement.setAttribute('data-lac-bound', '1');
   document.documentElement.setAttribute('data-lac-adapter', activeAdapter.id);
 
-  document.addEventListener(
+  targetDocument.addEventListener(
     'mousedown',
     (event) => {
-      void handleAltLeftClick(event).catch((error: unknown) => {
+      void handleAltLeftClick(event, targetDocument).catch((error: unknown) => {
         console.error(`${LOG_PREFIX} handler failed`, error);
       });
     },
@@ -190,16 +198,39 @@ function bindOnCanvas(): void {
   );
 
   console.info(`${LOG_PREFIX} chart listener bound`, {
-    href: window.location.href,
-    isTop: window.top === window,
-    adapter: activeAdapter.id
+    href: targetDocument.location?.href ?? window.location.href,
+    isTop: targetDocument === document && window.top === window,
+    adapter: activeAdapter.id,
+    inFrame: targetDocument !== document
   });
+}
+
+function bindOnCanvas(): void {
+  bindOnDocument(document);
+
+  if (activeAdapter?.id !== 'binance') {
+    return;
+  }
+
+  const frames = Array.from(document.querySelectorAll<HTMLIFrameElement>('iframe'));
+  for (const frame of frames) {
+    try {
+      const frameDocument = frame.contentDocument;
+      if (!frameDocument) {
+        continue;
+      }
+
+      bindOnDocument(frameDocument);
+    } catch {
+      // Ignore cross-origin iframes; only same-origin TradingView frame is relevant.
+      continue;
+    }
+  }
 }
 
 bindTopWindowMessageBridge();
 void hudSlotsController.loadSlotConfigFromStorage();
 void hudSlotsController.loadHudSettingsFromStorage();
-void hudSlotsController.loadSafeModeFromStorage();
 bindOnCanvas();
 hudSlotsController.bindSlotHotkeys();
 hudSlotsController.bindStorageSync();

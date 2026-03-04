@@ -23,32 +23,27 @@ This version places orders through the exchange UI flow:
 - switches to **Limit** order type
 - selects **Buy/Long** or **Sell/Short** side
 - fills price and amount inputs
-- optionally clicks `data-testid="place-order-button"`
-
-By default, **Safe mode is ON**, so the extension prepares the order flow but does not click final submit.
-Disable Safe mode in popup to allow real order submission.
+- clicks `data-testid="place-order-button"` for order submission
 
 ## Safety notice
 - This project is not financial advice.
-- Safe mode is enabled by default.
-- If you disable Safe mode, the extension can submit real orders through exchange UI controls.
 - Always test on demo/sandbox environments first.
 - See [DISCLAIMER.md](./DISCLAIMER.md) for details.
 
 ## Supported exchanges/pages
 - Lighter
+- Binance (USDT-M Futures, **TradingView chart mode only**)
 
 ## Coming soon
 - Asterdex
 - Bybit
-- Binance
 - MEXC
 
 Want support for another exchange? Open a GitHub Issue with your request.
 
 ## Icon behavior
-- Gray icon: current tab is not a supported `/trade/*` page.
-- Teal icon: current tab is a supported `/trade/*` page.
+- Gray icon: current tab is not a supported trade page.
+- Teal icon: current tab is a supported trade page.
 
 ## Why use it
 - Faster manual scalping workflow
@@ -84,18 +79,30 @@ pnpm build
 ## How to use
 1. Open a supported trade page, for example:
    - `https://app.lighter.xyz/trade/BTC`
+   - `https://www.binance.com/en/futures/BTCUSDT`
+   - On Binance, switch chart mode to **TradingView** (the **Original** chart mode is not supported yet).
 2. Open the extension popup and set your volume slots for the ticker.
 3. Slot values auto-save when an input loses focus.
 4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
 5. Hold `Alt` and left-click in the chart area.
-6. With Safe mode ON (default), the extension prepares a limit order flow without final submit click.
-7. Turn Safe mode OFF in popup if you want real submit click.
-8. Optional: open DevTools Console and check extension logs (`[scalp-alt-click] ...`) for debugging.
+6. The extension prepares and submits the limit order flow through the exchange UI.
+7. Optional: open DevTools Console and check extension logs (`[scalp-alt-click] ...`) for debugging.
+
+### Paper mode (runtime)
+- To dry-run order flow without final submit click, set `data-lac-paper-mode=\"1\"` on `<html>`.
+- Example in DevTools console:
+```js
+document.documentElement.setAttribute('data-lac-paper-mode', '1');
+```
+- Disable:
+```js
+document.documentElement.removeAttribute('data-lac-paper-mode');
+```
 
 On supported pages, a floating in-page label shows `Slot N: Volume`.
 You can enable/disable this label and choose its corner per supported domain.
 
-On unsupported pages, popup editors are hidden and a quick instruction is shown to open a supported `/trade/<TICKER>` URL first.
+On unsupported pages, popup editors are hidden and a quick instruction is shown to open a supported trade URL first.
 
 ## What you will see in the log
 The log payload includes:
@@ -108,7 +115,7 @@ The log payload includes:
 
 ## Troubleshooting
 - Nothing happens on click:
-  - Make sure you are on a supported `/trade/*` URL.
+  - Make sure you are on a supported trade URL.
   - Reload the extension in `chrome://extensions`.
   - Refresh the trade page.
 - Icon does not change color:

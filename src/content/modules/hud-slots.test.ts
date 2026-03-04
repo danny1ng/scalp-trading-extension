@@ -23,16 +23,30 @@ function createAdapter(): ExchangeAdapter {
     getCurrentPrice: () => null,
     isClickInsideChartArea: () => false,
     getChartCanvas: () => null,
-    resolveClickedPrice: async () => null
+    resolveClickedPrice: async () => null,
+    orderUi: {
+      limitType: {},
+      side: {
+        mode: 'tab',
+        buy: {},
+        sell: {}
+      },
+      fields: {
+        price: {},
+        amount: {}
+      }
+    }
   };
 }
 
 describe('createHudSlotsController', () => {
   test('refreshes slot config when ticker changes in URL', async () => {
     const storage = createStorageStore({
-      lighterVolumeByTicker: {
-        BTC: { slots: [0.1, null, null, null, null], activeSlotIndex: 0 },
-        ETH: { slots: [0.2, null, null, null, null], activeSlotIndex: 0 }
+      lacVolumeByExchangeTicker: {
+        test: {
+          BTC: { slots: [0.1, null, null, null, null], activeSlotIndex: 0 },
+          ETH: { slots: [0.2, null, null, null, null], activeSlotIndex: 0 }
+        }
       }
     });
 

@@ -5,9 +5,11 @@ export type TickerSlotConfig = {
   activeSlotIndex: number;
 };
 
-type StorageRecord = Record<string, TickerSlotConfig>;
+type ExchangeStorageRecord = Record<string, TickerSlotConfig>;
+type StorageRecord = Record<string, ExchangeStorageRecord>;
 
-const STORAGE_KEY = 'lighterVolumeByTicker';
+const STORAGE_KEY = 'lacVolumeByExchangeTicker';
+const LEGACY_STORAGE_KEY = 'lighterVolumeByTicker';
 
 const DEFAULT_CONFIG: TickerSlotConfig = {
   slots: [null, null, null, null, null],
@@ -59,11 +61,23 @@ async function getStore(): Promise<StorageRecord> {
   const result = await chrome.storage.local.get(STORAGE_KEY);
   const store = result[STORAGE_KEY];
 
-  if (!store || typeof store !== 'object') {
+  if (store && typeof store === 'object') {
+    return store as StorageRecord;
+  }
+
+  const legacyResult = await chrome.storage.local.get(LEGACY_STORAGE_KEY);
+  const legacyStore = legacyResult[LEGACY_STORAGE_KEY];
+  if (!legacyStore || typeof legacyStore !== 'object') {
     return {};
   }
 
-  return store as StorageRecord;
+  const migrated: StorageRecord = { lighter: {} };
+  for (const [ticker, rawConfig] of Object.entries(legacyStore as Record<string, Partial<TickerSlotConfig>>)) {
+    migrated.lighter[ticker.toUpperCase()] = normalizeConfig(rawConfig);
+  }
+
+  await setStore(migrated);
+  return migrated;
 }
 
 async function setStore(store: StorageRecord): Promise<void> {
@@ -74,15 +88,19 @@ async function setStore(store: StorageRecord): Promise<void> {
   await chrome.storage.local.set({ [STORAGE_KEY]: store });
 }
 
-export async function getTickerSlotConfig(ticker: string): Promise<TickerSlotConfig> {
+export async function getTickerSlotConfig(exchangeId: string, ticker: string): Promise<TickerSlotConfig> {
+  const exchangeKey = exchangeId.toLowerCase();
   const key = ticker.toUpperCase();
   const store = await getStore();
-  return normalizeConfig(store[key]);
+  return normalizeConfig(store[exchangeKey]?.[key]);
 }
 
-export async function saveTickerSlotConfig(ticker: string, config: TickerSlotConfig): Promise<void> {
+export async function saveTickerSlotConfig(exchangeId: string, ticker: string, config: TickerSlotConfig): Promise<void> {
+  const exchangeKey = exchangeId.toLowerCase();
   const key = ticker.toUpperCase();
   const store = await getStore();
-  store[key] = normalizeConfig(config);
+  const exchangeStore: ExchangeStorageRecord = store[exchangeKey] && typeof store[exchangeKey] === 'object' ? { ...store[exchangeKey] } : {};
+  exchangeStore[key] = normalizeConfig(config);
+  store[exchangeKey] = exchangeStore;
   await setStore(store);
 }

@@ -14,7 +14,12 @@
     "service_worker": "assets/background.js",
     "type": "module"
   },
-  "host_permissions": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"],
+  "host_permissions": [
+    "https://app.lighter.xyz/*",
+    "https://lighter.exchange/*",
+    "https://www.binance.com/*",
+    "https://binance.com/*"
+  ],
   "action": {
     "default_title": "One-Click Chart Scalper",
     "default_popup": "index.html",
@@ -27,7 +32,21 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.lighter.xyz/trade/*", "https://lighter.exchange/trade/*"],
+      "matches": [
+        "https://www.binance.com/*",
+        "https://binance.com/*"
+      ],
+      "js": ["assets/content.js"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://app.lighter.xyz/*",
+        "https://lighter.exchange/*"
+      ],
       "js": ["assets/content.js"],
       "all_frames": true,
       "match_about_blank": true,
@@ -37,7 +56,12 @@
   "web_accessible_resources": [
     {
       "resources": ["assets/page-bridge.js"],
-      "matches": ["https://app.lighter.xyz/*", "https://lighter.exchange/*"]
+      "matches": [
+        "https://app.lighter.xyz/*",
+        "https://lighter.exchange/*",
+        "https://www.binance.com/*",
+        "https://binance.com/*"
+      ]
     }
   ]
 }

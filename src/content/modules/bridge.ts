@@ -13,27 +13,27 @@ export type FormFillBridgeResponse = {
   amountValue: string | null;
 };
 
-export function injectPagePriceBridge(): void {
+export function injectPagePriceBridge(targetDocument: Document = document): void {
   const marker = '__scalpAltClickPageBridgeInjected';
-  const markedDocument = document as Document & Record<string, unknown>;
+  const markedDocument = targetDocument as Document & Record<string, unknown>;
   if (markedDocument[marker]) {
     return;
   }
 
   markedDocument[marker] = true;
-  const script = document.createElement('script');
+  const script = targetDocument.createElement('script');
   script.src = chrome.runtime.getURL('assets/page-bridge.js');
   script.async = false;
 
-  (document.head ?? document.documentElement).appendChild(script);
+  (targetDocument.head ?? targetDocument.documentElement).appendChild(script);
   script.remove();
 }
 
-export async function requestPriceFromPageBridge(localY: number): Promise<number | null> {
+export async function requestPriceFromPageBridge(localY: number, targetWindow: Window = window): Promise<number | null> {
   const requestId = `lac-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return await new Promise<number | null>((resolve) => {
-    const timeoutId = window.setTimeout(() => {
-      window.removeEventListener('message', onMessage);
+    const timeoutId = targetWindow.setTimeout(() => {
+      targetWindow.removeEventListener('message', onMessage);
       resolve(null);
     }, 150);
 
@@ -51,13 +51,13 @@ export async function requestPriceFromPageBridge(localY: number): Promise<number
         return;
       }
 
-      window.clearTimeout(timeoutId);
-      window.removeEventListener('message', onMessage);
+      targetWindow.clearTimeout(timeoutId);
+      targetWindow.removeEventListener('message', onMessage);
       resolve(typeof data.price === 'number' && Number.isFinite(data.price) ? data.price : null);
     };
 
-    window.addEventListener('message', onMessage);
-    window.postMessage(
+    targetWindow.addEventListener('message', onMessage);
+    targetWindow.postMessage(
       {
         source: MESSAGE_SOURCE,
         type: MESSAGE_TYPE_PRICE_REQUEST,
