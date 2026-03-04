@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-03-05
+### Added
+- Binance USDT-M Futures support (TradingView chart mode).
+- Runtime paper mode via `data-lac-paper-mode` to dry-run order flow without final submit click.
+- Exchange-scoped ticker slot storage so slot presets are isolated per exchange.
+
+### Changed
+- README was rewritten for clearer product positioning and SEO-focused discoverability.
+- Expanded roadmap in README with upcoming exchange support targets.
+
+### Fixed
+- Stabilized Binance runtime binding and click flow in multi-frame chart environments.
+- Improved locale resilience in number and UI text handling during order flow.
+
 ## [0.1.1] - 2026-02-27
 ### Fixed
 - Content script bundle compatibility for Chrome extension injection (removed module import issue in `content.js`).
