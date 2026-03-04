@@ -13,7 +13,15 @@ import {
 
 document.documentElement.setAttribute('data-lac-injected', '1');
 
-const activeAdapter = resolveAdapterForUrl(window.location.href);
+function resolveRuntimeUrl(): string {
+  try {
+    return window.top?.location.href ?? window.location.href;
+  } catch {
+    return window.location.href;
+  }
+}
+
+const activeAdapter = resolveAdapterForUrl(resolveRuntimeUrl());
 const hudSlotsController = createHudSlotsController(activeAdapter);
 
 function decideSide(clickedPrice: number, currentPrice: number | null): OrderSide {
@@ -90,7 +98,7 @@ function bindTopWindowMessageBridge(): void {
     }
 
     if (data.type === MESSAGE_TYPE_UI_EXECUTE && data.payload) {
-      void executeUiOrderFlow(data.payload, { safeMode: hudSlotsController.getSafeMode() }).catch((error: unknown) => {
+      void executeUiOrderFlow(data.payload, activeAdapter).catch((error: unknown) => {
         setExecutionStatus('failed', 'execute-handler-failed');
         console.error(`${LOG_PREFIX} ui-order-submit handler failed`, error);
       });
@@ -155,7 +163,7 @@ async function handleAltLeftClick(event: MouseEvent): Promise<void> {
     return;
   }
 
-  void executeUiOrderFlow(draftPayload, { safeMode: hudSlotsController.getSafeMode() });
+  void executeUiOrderFlow(draftPayload, activeAdapter);
 }
 
 function bindOnCanvas(): void {
@@ -199,7 +207,6 @@ function bindOnCanvas(): void {
 bindTopWindowMessageBridge();
 void hudSlotsController.loadSlotConfigFromStorage();
 void hudSlotsController.loadHudSettingsFromStorage();
-void hudSlotsController.loadSafeModeFromStorage();
 bindOnCanvas();
 hudSlotsController.bindSlotHotkeys();
 hudSlotsController.bindStorageSync();

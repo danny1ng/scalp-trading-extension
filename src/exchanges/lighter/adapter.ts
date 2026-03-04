@@ -279,5 +279,36 @@ export const lighterAdapter: ExchangeAdapter = {
     }
 
     return resolveClickedPriceByUniversalInterpolation(event, rect);
+  },
+  orderUi: {
+    limitType: {
+      testIds: ['select-order-type-limit'],
+      texts: ['Limit']
+    },
+    side: {
+      mode: 'tab',
+      buy: {
+        testIds: ['order-buy-button'],
+        texts: ['Buy / Long']
+      },
+      sell: {
+        testIds: ['order-sell-button'],
+        texts: ['Sell / Short']
+      }
+    },
+    fields: {
+      price: {
+        testIds: ['limit-order-limit-input'],
+        labels: ['Limit Price']
+      },
+      amount: {
+        testIds: ['place-order-size-input'],
+        labels: ['Amount']
+      }
+    },
+    submit: {
+      testIds: ['place-order-button'],
+      texts: ['Place Order']
+    }
   }
 };

@@ -13,4 +13,8 @@ describe('resolveAdapterForUrl', () => {
   test('returns null for unsupported url', () => {
     expect(resolveAdapterForUrl('https://example.com/trade/BTC')).toBeNull();
   });
+
+  test('resolves binance adapter for futures url', () => {
+    expect(resolveAdapterForUrl('https://www.binance.com/en/futures/BTCUSDT')?.id).toBe('binance');
+  });
 });

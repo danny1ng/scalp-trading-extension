@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from './components/ui/badge';
 import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
+import { resolveAdapterForUrl } from './core/adapter-registry';
 import { isSupportedTradeUrl } from './core/supported-url';
 import {
   domainFromUrl,
@@ -10,15 +11,14 @@ import {
   saveHudSettingsForDomain,
   type HudCorner
 } from './lib/hud-settings';
-import { getDefaultSafeMode, getSafeModeForDomain, saveSafeModeForDomain } from './lib/safe-mode-settings';
 import { getTickerSlotConfig, saveTickerSlotConfig, type SlotValue } from './lib/slots-storage';
-import { tickerFromTradeUrl } from './lib/ticker';
 
 type DraftSlots = string[];
 
 type ActiveTabContext = {
   url: string | null;
   ticker: string | null;
+  exchangeId: string | null;
   supported: boolean;
 };
 
@@ -39,18 +39,22 @@ function parseDraftSlots(values: DraftSlots): SlotValue[] {
 
 async function getActiveTabContext(): Promise<ActiveTabContext> {
   if (typeof chrome === 'undefined' || !chrome.tabs?.query) {
-    return { url: null, ticker: null, supported: false };
+    return { url: null, ticker: null, exchangeId: null, supported: false };
   }
 
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   const currentUrl = tabs[0]?.url ?? null;
   if (!currentUrl) {
-    return { url: null, ticker: null, supported: false };
+    return { url: null, ticker: null, exchangeId: null, supported: false };
   }
+
+  const activeAdapter = resolveAdapterForUrl(currentUrl);
+  const ticker = activeAdapter?.getTicker(currentUrl) ?? null;
 
   return {
     url: currentUrl,
-    ticker: tickerFromTradeUrl(currentUrl),
+    ticker,
+    exchangeId: activeAdapter?.id ?? null,
     supported: isSupportedTradeUrl(currentUrl)
   };
 }
@@ -62,12 +66,13 @@ export default function App() {
   const [status, setStatus] = useState<'idle' | 'loaded' | 'saved'>('idle');
   const [hudEnabled, setHudEnabled] = useState(getDefaultHudSettings().enabled);
   const [hudCorner, setHudCorner] = useState<HudCorner>(getDefaultHudSettings().corner);
-  const [safeMode, setSafeMode] = useState(getDefaultSafeMode());
   const [tabContext, setTabContext] = useState<ActiveTabContext>({
     url: null,
     ticker: null,
+    exchangeId: null,
     supported: false
   });
+  const [exchangeId, setExchangeId] = useState('lighter');
 
   useEffect(() => {
     async function detectActiveTabContext() {
@@ -76,6 +81,9 @@ export default function App() {
       if (context.ticker) {
         setTicker(context.ticker);
       }
+      if (context.exchangeId) {
+        setExchangeId(context.exchangeId);
+      }
     }
 
     void detectActiveTabContext();
@@ -83,14 +91,14 @@ export default function App() {
 
   useEffect(() => {
     async function load() {
-      const config = await getTickerSlotConfig(ticker);
+      const config = await getTickerSlotConfig(exchangeId, ticker);
       setSlots(toDraftSlots(config.slots));
       setActiveSlotIndex(config.activeSlotIndex);
       setStatus('loaded');
     }
 
     void load();
-  }, [ticker]);
+  }, [exchangeId, ticker]);
 
   useEffect(() => {
     async function loadUiSettings() {
@@ -106,16 +114,13 @@ export default function App() {
       const settings = await getHudSettingsForDomain(domain);
       setHudEnabled(settings.enabled);
       setHudCorner(settings.corner);
-
-      const nextSafeMode = await getSafeModeForDomain(domain);
-      setSafeMode(nextSafeMode);
     }
 
     void loadUiSettings();
   }, [tabContext.supported, tabContext.url]);
 
   async function persistDraft(nextSlots: DraftSlots, nextActiveSlotIndex: number): Promise<void> {
-    await saveTickerSlotConfig(ticker, {
+    await saveTickerSlotConfig(exchangeId, ticker, {
       slots: parseDraftSlots(nextSlots),
       activeSlotIndex: nextActiveSlotIndex
     });
@@ -156,16 +161,6 @@ export default function App() {
   async function onChangeHudCorner(corner: HudCorner): Promise<void> {
     setHudCorner(corner);
     await persistHudSettings({ enabled: hudEnabled, corner });
-  }
-
-  async function onToggleSafeMode(enabled: boolean): Promise<void> {
-    setSafeMode(enabled);
-    const domain = domainFromUrl(tabContext.url);
-    if (!domain) {
-      return;
-    }
-
-    await saveSafeModeForDomain(domain, enabled);
   }
 
   const activeVolumePreview = useMemo(() => {
@@ -227,10 +222,6 @@ export default function App() {
           <Card className="footer-card">
             <div className="hud-settings">
               <label className="hud-toggle">
-                <input type="checkbox" checked={safeMode} onChange={(event) => void onToggleSafeMode(event.target.checked)} />
-                <span>Safe mode (no order click)</span>
-              </label>
-              <label className="hud-toggle">
                 <input type="checkbox" checked={hudEnabled} onChange={(event) => void onToggleHud(event.target.checked)} />
                 <span>Show chart label</span>
               </label>
@@ -244,9 +235,7 @@ export default function App() {
                 </select>
               </label>
             </div>
-            <p className="hint">
-              Hold Alt + Left Click on chart to {safeMode ? 'prepare order flow' : 'prepare and submit order'}.
-            </p>
+            <p className="hint">Hold Alt + Left Click on chart to prepare and submit order.</p>
             <p className="hint">Use Alt + 1..5 to switch active slot.</p>
             <p className="status">Status: {status}</p>
           </Card>

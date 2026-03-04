@@ -17,6 +17,14 @@ describe('isSupportedTradeUrl', () => {
   test('rejects unsupported host', () => {
     expect(isSupportedTradeUrl('https://example.com/trade/BTC')).toBe(false);
   });
+
+  test('matches binance futures path with locale', () => {
+    expect(isSupportedTradeUrl('https://www.binance.com/ru/futures/BTCUSDT')).toBe(true);
+  });
+
+  test('matches binance futures path without locale', () => {
+    expect(isSupportedTradeUrl('https://www.binance.com/futures/ETHUSDT')).toBe(true);
+  });
 });
 
 describe('getSupportedHost', () => {

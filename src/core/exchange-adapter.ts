@@ -1,3 +1,24 @@
+export type OrderUiTarget = {
+  selectors?: string[];
+  testIds?: string[];
+  texts?: string[];
+  labels?: string[];
+};
+
+export type ExchangeOrderUiDescriptor = {
+  limitType: OrderUiTarget;
+  side: {
+    mode: 'tab' | 'submit';
+    buy: OrderUiTarget;
+    sell: OrderUiTarget;
+  };
+  fields: {
+    price: OrderUiTarget;
+    amount: OrderUiTarget;
+  };
+  submit?: OrderUiTarget;
+};
+
 export type ExchangeAdapter = {
   id: string;
   matches: (url: string) => boolean;
@@ -11,4 +32,5 @@ export type ExchangeAdapter = {
       requestPriceFromPageBridge: (localY: number) => Promise<number | null>;
     }
   ) => Promise<number | null>;
+  orderUi: ExchangeOrderUiDescriptor;
 };

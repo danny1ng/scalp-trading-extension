@@ -1,11 +1,10 @@
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
+import { getTickerSlotConfig, saveTickerSlotConfig } from '../../lib/slots-storage';
 import type { HudCorner, HudSettings, SlotValue, TickerSlotConfig } from '../types';
 import { LOG_PREFIX } from '../types';
 
-const STORAGE_KEY = 'lighterVolumeByTicker';
+const SLOT_STORAGE_KEY = 'lacVolumeByExchangeTicker';
 const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
-const SAFE_MODE_KEY = 'lacSafeModeByDomain';
-const DEFAULT_SAFE_MODE = true;
 
 function normalizeSlots(input: unknown[]): SlotValue[] {
   const normalized: SlotValue[] = [null, null, null, null, null];
@@ -62,33 +61,6 @@ function normalizeHudSettings(raw: unknown): HudSettings {
   };
 }
 
-async function readConfigByTicker(ticker: string): Promise<TickerSlotConfig> {
-  if (!chrome.storage?.local) {
-    return normalizeConfig(undefined);
-  }
-
-  const result = await chrome.storage.local.get(STORAGE_KEY);
-  const store = result[STORAGE_KEY];
-  if (!store || typeof store !== 'object') {
-    return normalizeConfig(undefined);
-  }
-
-  const typedStore = store as Record<string, unknown>;
-  return normalizeConfig(typedStore[ticker.toUpperCase()]);
-}
-
-async function writeConfigByTicker(ticker: string, config: TickerSlotConfig): Promise<void> {
-  if (!chrome.storage?.local) {
-    return;
-  }
-
-  const result = await chrome.storage.local.get(STORAGE_KEY);
-  const store = result[STORAGE_KEY];
-  const nextStore: Record<string, unknown> = store && typeof store === 'object' ? { ...(store as Record<string, unknown>) } : {};
-  nextStore[ticker.toUpperCase()] = normalizeConfig(config);
-  await chrome.storage.local.set({ [STORAGE_KEY]: nextStore });
-}
-
 async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
   if (!chrome.storage?.local) {
     return normalizeHudSettings(undefined);
@@ -104,25 +76,6 @@ async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
   return normalizeHudSettings(typedStore[domain.toLowerCase()]);
 }
 
-function normalizeSafeMode(raw: unknown): boolean {
-  return typeof raw === 'boolean' ? raw : DEFAULT_SAFE_MODE;
-}
-
-async function readSafeModeByDomain(domain: string): Promise<boolean> {
-  if (!chrome.storage?.local) {
-    return DEFAULT_SAFE_MODE;
-  }
-
-  const result = await chrome.storage.local.get(SAFE_MODE_KEY);
-  const store = result[SAFE_MODE_KEY];
-  if (!store || typeof store !== 'object') {
-    return DEFAULT_SAFE_MODE;
-  }
-
-  const typedStore = store as Record<string, unknown>;
-  return normalizeSafeMode(typedStore[domain.toLowerCase()]);
-}
-
 export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) {
   let activeTicker: string | null = null;
   let activeSlotConfig: TickerSlotConfig = {
@@ -133,11 +86,14 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     enabled: true,
     corner: 'bottom-right'
   };
-  let activeSafeMode = DEFAULT_SAFE_MODE;
   let hudElement: HTMLDivElement | null = null;
 
   function getSelectedSlotVolume(): number | null {
     return activeSlotConfig.slots[activeSlotConfig.activeSlotIndex];
+  }
+
+  function getActiveExchangeId(): string {
+    return activeAdapter?.id ?? 'lighter';
   }
 
   function ensureHudElement(): HTMLDivElement | null {
@@ -231,17 +187,13 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
       return;
     }
 
-    activeSlotConfig = await readConfigByTicker(activeTicker);
+    activeSlotConfig = await getTickerSlotConfig(getActiveExchangeId(), activeTicker);
     renderHud();
   }
 
   async function loadHudSettingsFromStorage(): Promise<void> {
     activeHudSettings = await readHudSettingsByDomain(window.location.hostname);
     renderHud();
-  }
-
-  async function loadSafeModeFromStorage(): Promise<void> {
-    activeSafeMode = await readSafeModeByDomain(window.location.hostname);
   }
 
   async function setActiveSlotIndex(nextIndex: number): Promise<void> {
@@ -253,7 +205,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     renderHud();
 
     if (activeTicker) {
-      await writeConfigByTicker(activeTicker, activeSlotConfig);
+      await saveTickerSlotConfig(getActiveExchangeId(), activeTicker, activeSlotConfig);
     }
   }
 
@@ -303,13 +255,15 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
         return;
       }
 
-      if (changes[STORAGE_KEY] && activeTicker) {
-        const nextStore = changes[STORAGE_KEY].newValue;
-        if (nextStore && typeof nextStore === 'object') {
-          const nextConfig = normalizeConfig((nextStore as Record<string, unknown>)[activeTicker.toUpperCase()]);
-          activeSlotConfig = nextConfig;
-          renderHud();
-        }
+      if (changes[SLOT_STORAGE_KEY] && activeTicker) {
+        void getTickerSlotConfig(getActiveExchangeId(), activeTicker)
+          .then((nextConfig) => {
+            activeSlotConfig = nextConfig;
+            renderHud();
+          })
+          .catch((error: unknown) => {
+            console.error(`${LOG_PREFIX} storage sync failed`, error);
+          });
       }
 
       if (changes[HUD_STORAGE_KEY]) {
@@ -320,14 +274,6 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
         }
       }
 
-      if (changes[SAFE_MODE_KEY]) {
-        const nextStore = changes[SAFE_MODE_KEY].newValue;
-        if (nextStore && typeof nextStore === 'object') {
-          activeSafeMode = normalizeSafeMode((nextStore as Record<string, unknown>)[window.location.hostname.toLowerCase()]);
-        } else {
-          activeSafeMode = DEFAULT_SAFE_MODE;
-        }
-      }
     });
   }
 
@@ -351,7 +297,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     }
 
     activeTicker = nextTicker;
-    activeSlotConfig = await readConfigByTicker(nextTicker);
+    activeSlotConfig = await getTickerSlotConfig(getActiveExchangeId(), nextTicker);
     renderHud();
   }
 
@@ -359,19 +305,13 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     return activeSlotConfig.activeSlotIndex;
   }
 
-  function getSafeMode(): boolean {
-    return activeSafeMode;
-  }
-
   return {
     loadSlotConfigFromStorage,
     loadHudSettingsFromStorage,
-    loadSafeModeFromStorage,
     bindSlotHotkeys,
     bindStorageSync,
     syncTickerFromLocation,
     getSelectedSlotVolume,
-    getActiveSlotIndex,
-    getSafeMode
+    getActiveSlotIndex
   };
 }
