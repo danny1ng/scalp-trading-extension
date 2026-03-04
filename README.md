@@ -32,7 +32,7 @@ This version places orders through the exchange UI flow:
 
 ## Supported exchanges/pages
 - Lighter
-- Binance (USDT-M Futures)
+- Binance (USDT-M Futures, **TradingView chart mode only**)
 
 ## Coming soon
 - Asterdex
@@ -80,6 +80,7 @@ pnpm build
 1. Open a supported trade page, for example:
    - `https://app.lighter.xyz/trade/BTC`
    - `https://www.binance.com/en/futures/BTCUSDT`
+   - On Binance, switch chart mode to **TradingView** (the **Original** chart mode is not supported yet).
 2. Open the extension popup and set your volume slots for the ticker.
 3. Slot values auto-save when an input loses focus.
 4. Pick the active slot in popup or with `Alt+1..Alt+5` on the trade page.
