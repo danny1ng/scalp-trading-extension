@@ -25,6 +25,19 @@ Important Binance note:
 - Binance is currently supported when using the **TradingView chart mode**.
 - Binance **Original** chart mode is not supported yet.
 
+## Planned Exchange Support
+Near-term:
+- MEXC Futures
+- Asterdex
+- Bybit
+
+Also on the roadmap:
+- OKX
+- Bitget
+- KuCoin Futures
+- Gate.io Futures
+- Hyperliquid
+
 ## How Side Is Calculated
 - If `clickedPrice < currentPrice` -> `buy`
 - If `clickedPrice >= currentPrice` -> `sell`
