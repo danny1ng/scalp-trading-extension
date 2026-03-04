@@ -29,7 +29,7 @@ export type ExchangeAdapter = {
   resolveClickedPrice: (
     event: MouseEvent,
     deps: {
-      requestPriceFromPageBridge: (localY: number) => Promise<number | null>;
+      requestPriceFromPageBridge: (localY: number, targetWindow?: Window) => Promise<number | null>;
     }
   ) => Promise<number | null>;
   orderUi: ExchangeOrderUiDescriptor;

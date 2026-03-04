@@ -33,12 +33,19 @@
   "content_scripts": [
     {
       "matches": [
-        "https://app.lighter.xyz/trade/*",
-        "https://lighter.exchange/trade/*",
-        "https://www.binance.com/futures/*",
-        "https://www.binance.com/*/futures/*",
-        "https://binance.com/futures/*",
-        "https://binance.com/*/futures/*"
+        "https://www.binance.com/*",
+        "https://binance.com/*"
+      ],
+      "js": ["assets/content.js"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://app.lighter.xyz/*",
+        "https://lighter.exchange/*"
       ],
       "js": ["assets/content.js"],
       "all_frames": true,

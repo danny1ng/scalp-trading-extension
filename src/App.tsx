@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from './components/ui/badge';
 import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
-import { resolveAdapterForUrl } from './core/adapter-registry';
 import { isSupportedTradeUrl } from './core/supported-url';
 import {
   domainFromUrl,
@@ -48,13 +47,38 @@ async function getActiveTabContext(): Promise<ActiveTabContext> {
     return { url: null, ticker: null, exchangeId: null, supported: false };
   }
 
-  const activeAdapter = resolveAdapterForUrl(currentUrl);
-  const ticker = activeAdapter?.getTicker(currentUrl) ?? null;
+  const parsed = (() => {
+    try {
+      const url = new URL(currentUrl);
+      if ((url.hostname === 'app.lighter.xyz' || url.hostname === 'lighter.exchange') && /^\/trade\/[^/]+/i.test(url.pathname)) {
+        const match = url.pathname.match(/^\/trade\/([^/]+)/i);
+        return {
+          exchangeId: 'lighter',
+          ticker: match ? decodeURIComponent(match[1]).toUpperCase() : null
+        };
+      }
+
+      if (
+        (url.hostname === 'www.binance.com' || url.hostname === 'binance.com') &&
+        /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?futures\/[^/]+$/i.test(url.pathname)
+      ) {
+        const match = url.pathname.match(/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?futures\/([^/]+)/i);
+        return {
+          exchangeId: 'binance',
+          ticker: match ? decodeURIComponent(match[1]).toUpperCase() : null
+        };
+      }
+
+      return { exchangeId: null, ticker: null };
+    } catch {
+      return { exchangeId: null, ticker: null };
+    }
+  })();
 
   return {
     url: currentUrl,
-    ticker,
-    exchangeId: activeAdapter?.id ?? null,
+    ticker: parsed.ticker,
+    exchangeId: parsed.exchangeId,
     supported: isSupportedTradeUrl(currentUrl)
   };
 }

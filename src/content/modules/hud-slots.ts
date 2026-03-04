@@ -1,9 +1,9 @@
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
-import { getTickerSlotConfig, saveTickerSlotConfig } from '../../lib/slots-storage';
 import type { HudCorner, HudSettings, SlotValue, TickerSlotConfig } from '../types';
 import { LOG_PREFIX } from '../types';
 
 const SLOT_STORAGE_KEY = 'lacVolumeByExchangeTicker';
+const LEGACY_SLOT_STORAGE_KEY = 'lighterVolumeByTicker';
 const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
 
 function normalizeSlots(input: unknown[]): SlotValue[] {
@@ -74,6 +74,77 @@ async function readHudSettingsByDomain(domain: string): Promise<HudSettings> {
 
   const typedStore = store as Record<string, unknown>;
   return normalizeHudSettings(typedStore[domain.toLowerCase()]);
+}
+
+type ExchangeSlotStore = Record<string, Record<string, unknown>>;
+
+function normalizeExchangeSlotStore(raw: unknown): ExchangeSlotStore {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+
+  const next: ExchangeSlotStore = {};
+  for (const [exchange, byTicker] of Object.entries(raw as Record<string, unknown>)) {
+    if (!byTicker || typeof byTicker !== 'object') {
+      continue;
+    }
+
+    next[exchange.toLowerCase()] = { ...(byTicker as Record<string, unknown>) };
+  }
+
+  return next;
+}
+
+async function migrateLegacySlotsIfNeeded(): Promise<ExchangeSlotStore> {
+  if (!chrome.storage?.local) {
+    return {};
+  }
+
+  const result = await chrome.storage.local.get(SLOT_STORAGE_KEY);
+  const existing = normalizeExchangeSlotStore(result[SLOT_STORAGE_KEY]);
+  if (Object.keys(existing).length > 0) {
+    return existing;
+  }
+
+  const legacyResult = await chrome.storage.local.get(LEGACY_SLOT_STORAGE_KEY);
+  const legacyRaw = legacyResult[LEGACY_SLOT_STORAGE_KEY];
+  if (!legacyRaw || typeof legacyRaw !== 'object') {
+    return {};
+  }
+
+  const migrated: ExchangeSlotStore = { lighter: {} };
+  for (const [ticker, config] of Object.entries(legacyRaw as Record<string, unknown>)) {
+    migrated.lighter[ticker.toUpperCase()] = normalizeConfig(config);
+  }
+  await chrome.storage.local.set({ [SLOT_STORAGE_KEY]: migrated });
+  return migrated;
+}
+
+async function readConfigByExchangeTicker(exchangeId: string, ticker: string): Promise<TickerSlotConfig> {
+  if (!chrome.storage?.local) {
+    return normalizeConfig(undefined);
+  }
+
+  const store = await migrateLegacySlotsIfNeeded();
+  const exchangeStore = store[exchangeId.toLowerCase()];
+  if (!exchangeStore || typeof exchangeStore !== 'object') {
+    return normalizeConfig(undefined);
+  }
+
+  return normalizeConfig((exchangeStore as Record<string, unknown>)[ticker.toUpperCase()]);
+}
+
+async function writeConfigByExchangeTicker(exchangeId: string, ticker: string, config: TickerSlotConfig): Promise<void> {
+  if (!chrome.storage?.local) {
+    return;
+  }
+
+  const store = await migrateLegacySlotsIfNeeded();
+  const exchangeKey = exchangeId.toLowerCase();
+  const exchangeStore = store[exchangeKey] && typeof store[exchangeKey] === 'object' ? { ...store[exchangeKey] } : {};
+  exchangeStore[ticker.toUpperCase()] = normalizeConfig(config);
+  store[exchangeKey] = exchangeStore;
+  await chrome.storage.local.set({ [SLOT_STORAGE_KEY]: store });
 }
 
 export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) {
@@ -187,7 +258,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
       return;
     }
 
-    activeSlotConfig = await getTickerSlotConfig(getActiveExchangeId(), activeTicker);
+    activeSlotConfig = await readConfigByExchangeTicker(getActiveExchangeId(), activeTicker);
     renderHud();
   }
 
@@ -205,7 +276,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     renderHud();
 
     if (activeTicker) {
-      await saveTickerSlotConfig(getActiveExchangeId(), activeTicker, activeSlotConfig);
+      await writeConfigByExchangeTicker(getActiveExchangeId(), activeTicker, activeSlotConfig);
     }
   }
 
@@ -256,7 +327,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
       }
 
       if (changes[SLOT_STORAGE_KEY] && activeTicker) {
-        void getTickerSlotConfig(getActiveExchangeId(), activeTicker)
+        void readConfigByExchangeTicker(getActiveExchangeId(), activeTicker)
           .then((nextConfig) => {
             activeSlotConfig = nextConfig;
             renderHud();
@@ -297,7 +368,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     }
 
     activeTicker = nextTicker;
-    activeSlotConfig = await getTickerSlotConfig(getActiveExchangeId(), nextTicker);
+    activeSlotConfig = await readConfigByExchangeTicker(getActiveExchangeId(), nextTicker);
     renderHud();
   }
 

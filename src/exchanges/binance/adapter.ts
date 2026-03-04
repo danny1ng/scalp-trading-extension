@@ -125,14 +125,16 @@ export const binanceAdapter: ExchangeAdapter = {
   },
   getChartCanvas,
   resolveClickedPrice: async (event: MouseEvent, deps) => {
-    const canvas = getChartCanvas(document);
+    const eventDocument = event.view?.document ?? document;
+    const eventWindow = event.view ?? window;
+    const canvas = getChartCanvas(eventDocument);
     if (!canvas) {
       return null;
     }
 
     const rect = canvas.getBoundingClientRect();
     const localY = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
-    return await deps.requestPriceFromPageBridge(localY);
+    return await deps.requestPriceFromPageBridge(localY, eventWindow);
   },
   orderUi: {
     limitType: {
