@@ -7,6 +7,30 @@ const SLOT_STORAGE_KEY = 'lacVolumeByExchangeTicker';
 const LEGACY_SLOT_STORAGE_KEY = 'lighterVolumeByTicker';
 const HUD_STORAGE_KEY = 'lacHudSettingsByDomain';
 
+function resolveHotkeySlotIndex(event: KeyboardEvent): number | null {
+  const codeMatch = event.code.match(/^Digit([1-5])$/);
+  if (codeMatch) {
+    return Number(codeMatch[1]) - 1;
+  }
+
+  const macOptionDigitBySymbol: Record<string, number> = {
+    '\u00A1': 0, // Option+1
+    '\u2122': 1, // Option+2
+    '\u00A3': 2, // Option+3
+    '\u00A2': 3, // Option+4
+    '\u221E': 4 // Option+5
+  };
+  if (event.key in macOptionDigitBySymbol) {
+    return macOptionDigitBySymbol[event.key];
+  }
+
+  if (event.key < '1' || event.key > '5') {
+    return null;
+  }
+
+  return Number(event.key) - 1;
+}
+
 function normalizeSlots(input: unknown[]): SlotValue[] {
   const normalized: SlotValue[] = [null, null, null, null, null];
 
@@ -296,12 +320,12 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
           return;
         }
 
-        if (event.key < '1' || event.key > '5') {
+        const nextIndex = resolveHotkeySlotIndex(event);
+        if (nextIndex === null) {
           return;
         }
 
         event.preventDefault();
-        const nextIndex = Number(event.key) - 1;
         void setActiveSlotIndex(nextIndex).catch((error: unknown) => {
           console.error(`${LOG_PREFIX} slot hotkey failed`, error);
         });

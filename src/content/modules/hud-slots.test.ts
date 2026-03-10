@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { createHudSlotsController } from './hud-slots';
 import { isOrderModifierPressed } from './modifier-key';
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
@@ -45,6 +45,10 @@ function createAdapter(): ExchangeAdapter {
 }
 
 describe('createHudSlotsController', () => {
+  beforeEach(() => {
+    delete (document as Document & Record<string, unknown>).__scalpAltClickHotkeysBound;
+  });
+
   test('refreshes slot config when ticker changes in URL', async () => {
     const storage = createStorageStore({
       lacVolumeByExchangeTicker: {
@@ -96,6 +100,32 @@ describe('createHudSlotsController', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: '2', altKey: true, bubbles: true }));
 
     expect(isOrderModifierPressed).toHaveBeenCalled();
+    expect(controller.getActiveSlotIndex()).toBe(1);
+  });
+
+  test('supports macOS option+digit hotkeys via KeyboardEvent.code', async () => {
+    const storage = createStorageStore({
+      lacVolumeByExchangeTicker: {
+        test: {
+          BTC: { slots: [0.1, 0.2, null, null, null], activeSlotIndex: 0 }
+        }
+      }
+    });
+
+    (globalThis as unknown as { chrome: unknown }).chrome = {
+      storage: {
+        local: storage,
+        onChanged: { addListener: vi.fn() }
+      }
+    };
+
+    window.history.pushState({}, '', '/trade/BTC');
+    const controller = createHudSlotsController(createAdapter());
+    await controller.loadSlotConfigFromStorage();
+    controller.bindSlotHotkeys();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '™', code: 'Digit2', altKey: true, bubbles: true }));
+
     expect(controller.getActiveSlotIndex()).toBe(1);
   });
 });
