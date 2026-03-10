@@ -93,7 +93,7 @@ Then:
 5. Extension executes limit order UI flow.
 
 ## Interactive Example
-![How to use the extension (Alt/Option + click workflow)](./example.gif)
+<img src="./example.gif" alt="How to use the extension (Alt/Option + click workflow)" width="100%" />
 
 ## Who This Is For
 - Crypto scalpers executing frequent manual entries.
