@@ -151,6 +151,9 @@ No. It is a click-to-order assistant for manual execution.
 - License: [LICENSE](./LICENSE)
 - Code of Conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 
+## Contact
+- Telegram: [@dannny_ing](https://t.me/dannny_ing)
+
 ## Donations
 If this extension improves your workflow, you can support development:
 
