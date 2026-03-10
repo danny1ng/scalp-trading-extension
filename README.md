@@ -92,6 +92,9 @@ Then:
 4. Hold `Alt` (or `Option` on macOS) and left-click on chart.
 5. Extension executes limit order UI flow.
 
+## Interactive Example
+![How to use the extension (Alt/Option + click workflow)](./example.gif)
+
 ## Who This Is For
 - Crypto scalpers executing frequent manual entries.
 - Intraday traders using chart-based limit placement.
