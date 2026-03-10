@@ -1,6 +1,7 @@
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
 import type { HudCorner, HudSettings, SlotValue, TickerSlotConfig } from '../types';
 import { LOG_PREFIX } from '../types';
+import { isOrderModifierPressed } from './modifier-key';
 
 const SLOT_STORAGE_KEY = 'lacVolumeByExchangeTicker';
 const LEGACY_SLOT_STORAGE_KEY = 'lighterVolumeByTicker';
@@ -291,7 +292,7 @@ export function createHudSlotsController(activeAdapter: ExchangeAdapter | null) 
     document.addEventListener(
       'keydown',
       (event) => {
-        if (!event.altKey) {
+        if (!isOrderModifierPressed(event)) {
           return;
         }
 

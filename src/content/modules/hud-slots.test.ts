@@ -1,6 +1,11 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createHudSlotsController } from './hud-slots';
+import { isOrderModifierPressed } from './modifier-key';
 import type { ExchangeAdapter } from '../../core/exchange-adapter';
+
+vi.mock('./modifier-key', () => ({
+  isOrderModifierPressed: vi.fn((event: { altKey: boolean }) => event.altKey)
+}));
 
 function createStorageStore(initial: Record<string, unknown>) {
   const store = { ...initial };
@@ -65,5 +70,32 @@ describe('createHudSlotsController', () => {
     window.history.pushState({}, '', '/trade/ETH');
     await controller.syncTickerFromLocation();
     expect(controller.getSelectedSlotVolume()).toBe(0.2);
+  });
+
+  test('uses shared modifier helper for slot hotkeys', async () => {
+    const storage = createStorageStore({
+      lacVolumeByExchangeTicker: {
+        test: {
+          BTC: { slots: [0.1, 0.2, null, null, null], activeSlotIndex: 0 }
+        }
+      }
+    });
+
+    (globalThis as unknown as { chrome: unknown }).chrome = {
+      storage: {
+        local: storage,
+        onChanged: { addListener: vi.fn() }
+      }
+    };
+
+    window.history.pushState({}, '', '/trade/BTC');
+    const controller = createHudSlotsController(createAdapter());
+    await controller.loadSlotConfigFromStorage();
+    controller.bindSlotHotkeys();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '2', altKey: true, bubbles: true }));
+
+    expect(isOrderModifierPressed).toHaveBeenCalled();
+    expect(controller.getActiveSlotIndex()).toBe(1);
   });
 });

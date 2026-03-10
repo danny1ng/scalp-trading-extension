@@ -7,6 +7,13 @@ describe('content bundle compatibility', () => {
     const sourcePath = resolve(process.cwd(), 'src/content/modules/hud-slots.ts');
     const source = readFileSync(sourcePath, 'utf8');
 
-    expect(source).not.toContain("../../lib/safe-mode-settings");
+    expect(source).not.toContain('../../lib/safe-mode-settings');
+  });
+
+  test('content click handler uses shared modifier helper', () => {
+    const sourcePath = resolve(process.cwd(), 'src/content/index.ts');
+    const source = readFileSync(sourcePath, 'utf8');
+
+    expect(source).toContain('isOrderModifierPressed');
   });
 });

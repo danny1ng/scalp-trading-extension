@@ -2,7 +2,7 @@
 
 One-Click Chart Scalper is a **scalping Chrome extension** for traders who want **fast order placement** directly from a chart, with no extra desktop terminal or additional software stack.
 
-The core workflow is simple: hold `Alt`, click a chart price level, and the extension drives a **one-click limit order** flow in the exchange UI. It is built for manual scalpers who want faster execution from the browser while keeping control over side, size, and price logic.
+The core workflow is simple: hold `Alt` (or `Option` on macOS), click a chart price level, and the extension drives a **one-click limit order** flow in the exchange UI. It is built for manual scalpers who want faster execution from the browser while keeping control over side, size, and price logic.
 
 ## What This Extension Does
 - Resolves clicked chart price.
@@ -88,8 +88,8 @@ Then:
 ## Quick Start
 1. Open a supported trading page.
 2. Configure volume slots in popup.
-3. Select active slot (`Alt+1..Alt+5` on page).
-4. Hold `Alt` and left-click on chart.
+3. Select active slot (`Alt+1..Alt+5`, or `Option+1..Option+5` on macOS).
+4. Hold `Alt` (or `Option` on macOS) and left-click on chart.
 5. Extension executes limit order UI flow.
 
 ## Who This Is For
@@ -123,7 +123,7 @@ Yes. Use paper mode (`data-lac-paper-mode="1"`) to run flow without final submit
 No. It is a click-to-order assistant for manual execution.
 
 ## Troubleshooting
-- Nothing happens on Alt+click:
+- Nothing happens on `Alt`/`Option` + click:
   - Confirm URL is supported.
   - Reload extension in `chrome://extensions`.
   - Refresh trading page.

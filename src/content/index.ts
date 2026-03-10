@@ -1,6 +1,7 @@
 import { resolveAdapterForUrl } from '../core/adapter-registry';
 import { injectPagePriceBridge, requestPriceFromPageBridge } from './modules/bridge';
 import { createHudSlotsController } from './modules/hud-slots';
+import { isOrderModifierPressed } from './modules/modifier-key';
 import { executeUiOrderFlow, setExecutionStatus } from './modules/order-flow';
 import {
   LOG_PREFIX,
@@ -107,7 +108,7 @@ function bindTopWindowMessageBridge(): void {
 }
 
 async function handleAltLeftClick(event: MouseEvent, sourceDocument: Document = document): Promise<void> {
-  if (!activeAdapter || !event.altKey || event.button !== 0) {
+  if (!activeAdapter || !isOrderModifierPressed(event) || event.button !== 0) {
     return;
   }
 
